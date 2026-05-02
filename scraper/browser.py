@@ -31,8 +31,19 @@ def _zip_init_script(zip_code: str) -> str:
 _USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/124.0.0.0 Safari/537.36"
+    "Chrome/136.0.0.0 Safari/537.36"
 )
+
+# Client-hint headers that real Chrome 136 sends with every request.
+# Omitting these while claiming to be Chrome 136 is a strong bot signal.
+_CLIENT_HINT_HEADERS = {
+    "Accept-Language":    "en-US,en;q=0.9",
+    "Accept":             "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "sec-ch-ua":          '"Chromium";v="136", "Google Chrome";v="136", "Not-A.Brand";v="99"',
+    "sec-ch-ua-mobile":   "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "Upgrade-Insecure-Requests": "1",
+}
 
 
 class Browser:
@@ -70,6 +81,8 @@ class Browser:
         self._context = self._browser.new_context(
             user_agent=_USER_AGENT,
             viewport={"width": 1280, "height": 800},
+            extra_http_headers=_CLIENT_HINT_HEADERS,
+            locale="en-US",
         )
         self._page = self._context.new_page()
         self._page.add_init_script(_zip_init_script(config.ZIP_CODE))
@@ -99,12 +112,16 @@ class Browser:
                 wait_until="load",
                 timeout=config.PAGE_TIMEOUT_SECONDS * 1000,
             )
-            # Wait for listing content to appear — handles pages where results
-            # are injected dynamically after the initial HTML load.
+            # Scroll to trigger lazy-loaded vehicle cards, then wait for
+            # listing content injected dynamically after the initial HTML load.
+            try:
+                self._page.evaluate("window.scrollTo(0, 600)")
+            except Exception:
+                pass
             try:
                 self._page.wait_for_selector(
                     'script[type="application/ld+json"], [data-qa="vehicle-card"], [class*="VehicleCard"]',
-                    timeout=8000,
+                    timeout=12000,
                 )
             except Exception:
                 pass  # No vehicle elements found; extraction will handle it

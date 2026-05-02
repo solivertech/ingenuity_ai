@@ -604,6 +604,9 @@ def extract_listings(html: str, make: str, model: str) -> list[dict]:
 
     if not listings:
         log.warning("All extraction strategies failed for %s %s", make, model)
+        # Log a snippet to help diagnose bot-challenge or markup changes.
+        snippet = html[:800].replace("\n", " ").replace("\r", "")
+        log.debug("Page snippet (first 800 chars): %s", snippet)
         return []
 
     # Backfill Carvana's monthly payment from the rendered DOM
