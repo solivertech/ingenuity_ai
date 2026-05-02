@@ -45,10 +45,11 @@ _DEFAULTS: dict = {
     "anthropic_model": "claude-haiku-4-5-20251001",
     "anthropic_max_tokens": 1500,
     "nvidia_enabled": True,
-    "nvidia_model": "deepseek-ai/deepseek-v3_2",
+    "nvidia_model": "meta/llama-4-maverick-17b-128e-instruct",
     "nvidia_max_tokens": 1500,
     "cerebras_enabled": True,
-    "cerebras_model": "gpt-oss-120b",
+    # "cerebras_model": "zai-glm-4.7",  # 355B — switch back when free-tier access restored
+    "cerebras_model": "qwen-3-235b-a22b-instruct-2507",
     "cerebras_max_tokens": 1500,
     "output_dir": "./carvana_results",
     "vehicle_reference_dir": "./vehicle_reference",
