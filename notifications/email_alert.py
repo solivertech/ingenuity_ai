@@ -88,11 +88,17 @@ def build_email_html(
     show_financing: bool = True,
     down_payment: int | None = None,
     num_vehicles: int = 1,
+    domain_config=None,
 ) -> str:
-    """Public wrapper around _build_html for use by external callers."""
+    """Public wrapper around _build_html for use by external callers.
+
+    domain_config: optional DomainConfig; if provided, its display_name is used
+    in the footer in place of the generic Autospy branding.
+    """
+    label = (domain_config.display_name if domain_config else None) or profile_label
     return _build_html(
         listings, llm_result, price_drops, trends or {}, new_vins or set(),
-        profile_label, show_financing=show_financing, down_payment=down_payment,
+        label, show_financing=show_financing, down_payment=down_payment,
         num_vehicles=num_vehicles,
     )
 

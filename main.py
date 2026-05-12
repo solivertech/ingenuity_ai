@@ -30,7 +30,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 import config
 from profiles import SearchProfile, load_profiles, resolve_reference_doc, resolve_reference_doc_for_make
 from utils.logging_config import setup_logging, start_run_log, end_run_log
-from scraper.urls import build_search_url
+from domains.registry import load_adapter
 from scraper.browser import Browser
 from scraper.extractor import extract_listings, fetch_listing_drivetrain
 from analysis.rules import apply_filters, enrich_listings
@@ -102,7 +102,9 @@ def _run_profile(
         log.info("--- PHASE 1: SCRAPING ---")
         fuel_filters = profile.fuel_type_filters or [None]
         log.info("Fuel type searches: %s", ", ".join(f or "all" for f in fuel_filters))
-        all_raw, vehicle_stats, scrape_browser = _scrape(run_id, profile)
+        domain_id = getattr(profile, "domain_id", "carvana_suvs")
+        adapter = load_adapter(domain_id)
+        all_raw, vehicle_stats, scrape_browser = _scrape(run_id, profile, adapter)
         _log_scrape_summary(vehicle_stats, all_raw)
 
         # scrape_browser must be closed regardless of what happens next
@@ -137,6 +139,7 @@ def _run_profile(
                 model_preference=profile.model_preference,
                 hybrid_bonus=has_hybrid_interest,
                 down_payment=profile.down_payment,
+                scoring_weights=adapter.domain_config.scoring_weights or None,
             )
             _pref = profile.model_preference
             _n    = len(_pref)
@@ -270,6 +273,7 @@ def _run_profile(
                 show_financing=profile.show_financing,
                 down_payment=profile.down_payment,
                 num_vehicles=len(profile.vehicles),
+                domain_config=adapter.domain_config,
             )
             _makes = list({make for make, _ in profile.vehicles})
             _html_validation = validate_email_html(email_html, _makes)
@@ -340,7 +344,7 @@ def _write_preview_html(
 
 # ── Scraping ──────────────────────────────────────────────────────────────────
 
-def _scrape(run_id: str, profile: SearchProfile) -> tuple[list[dict], list[dict], Browser]:
+def _scrape(run_id: str, profile: SearchProfile, adapter) -> tuple[list[dict], list[dict], Browser]:
     """Scrape all vehicles for a profile across all configured fuel types.
     Returns (all_listings, per_vehicle_stats, browser).
 
@@ -368,7 +372,12 @@ def _scrape(run_id: str, profile: SearchProfile) -> tuple[list[dict], list[dict]
             log.info("Scraping %s %s [%s]...", make, model, label)
 
             for page in range(1, config.MAX_PAGES_PER_SEARCH + 1):
-                url = build_search_url(make, model, min_year, max_year, page, fuel_type=fuel_type)
+                url = adapter.build_url(
+                    page=page,
+                    make=make, model=model,
+                    min_year=min_year, max_year=max_year,
+                    fuel_type=fuel_type,
+                )
                 log.debug("URL: %s", url)
 
                 html = browser.get_page_content(url)
@@ -376,7 +385,7 @@ def _scrape(run_id: str, profile: SearchProfile) -> tuple[list[dict], list[dict]
                     log.warning("No HTML returned for %s %s [%s] page %d", make, model, label, page)
                     break
 
-                listings = extract_listings(html, make, model)
+                listings = extract_listings(html, make, model, adapter=adapter)
 
                 if listings:
                     strategy_used = listings[0].get("extraction_strategy", "unknown")

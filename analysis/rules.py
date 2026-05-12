@@ -104,6 +104,7 @@ def enrich_listings(
     model_preference: list[str] | None = None,
     hybrid_bonus: bool = True,
     down_payment: int | None = None,
+    scoring_weights: dict | None = None,
 ) -> list[dict]:
     """
     Enrich all listings in-place, computing value scores that require
@@ -121,6 +122,7 @@ def enrich_listings(
             model_preference=model_preference or [],
             hybrid_bonus=hybrid_bonus,
             down_payment=down_payment,
+            scoring_weights=scoring_weights,
         )
         for listing in listings
     ]
@@ -136,6 +138,7 @@ def enrich_listing(
     model_preference: list[str] | None = None,
     hybrid_bonus: bool = True,
     down_payment: int | None = None,
+    scoring_weights: dict | None = None,
 ) -> dict:
     """
     Add computed fields to a listing dict:
@@ -159,16 +162,20 @@ def enrich_listing(
     listing["price_per_mile"] = calc_price_per_mile(price, mileage)
     listing["is_hybrid"]      = _is_hybrid(trim)
     listing["age_years"]      = (current_year - year) if year else None
-    listing["value_score"]         = _value_score(
+    listing["value_score"]    = _value_score(
         listing, group_averages or {}, current_year, max_mileage,
         min_year=min_year,
         model_preference=model_preference or [],
         hybrid_bonus=hybrid_bonus,
+        scoring_weights=scoring_weights,
     )
     return listing
 
 
 # ── Value score ───────────────────────────────────────────────────────────────
+
+_DEFAULT_WEIGHTS = {"price": 35, "mileage": 25, "age": 20, "shipping": 10, "hybrid": 10}
+
 
 def _value_score(
     listing: dict,
@@ -178,56 +185,65 @@ def _value_score(
     min_year: int = _SCORE_MIN_YEAR,
     model_preference: list[str] | None = None,
     hybrid_bonus: bool = True,
+    scoring_weights: dict | None = None,
 ) -> float:
     """
     Produce a 0–100 score. Higher is better.
 
-    Components (base weights sum to 100, plus optional bonuses):
-      35 — price vs group average (same make/model/year)
-      25 — mileage (inverse linear, 0→25pts, max_mileage→0pts)
-      20 — age (newer = better, max_year→20pts, min_year→0pts)
-      10 — shipping (free/unknown→10pts, $1,500+→0pts, linear)
-      10 — hybrid bonus (only when hybrid_bonus=True)
-       6 — model preference bonus (auto-spread across model_preference order)
+    Weight keys (from scoring_weights or _DEFAULT_WEIGHTS):
+      price    — price vs group average (same make/model/year)
+      mileage  — inverse linear, 0→full pts, max_mileage→0pts
+      age      — newer = better, max_year→full pts, min_year→0pts
+      shipping — free/unknown→full pts, $1,500+→0pts, linear
+      hybrid   — bonus when listing is_hybrid (only when hybrid_bonus=True)
+    Plus up to 6 pts model preference bonus (auto-spread by rank).
     """
+    w = scoring_weights if scoring_weights is not None else _DEFAULT_WEIGHTS
+
     price    = listing.get("price") or 0.0
     mileage  = listing.get("mileage")
     year     = listing.get("year")
     shipping = listing.get("shipping")
 
-    # ── Price component (35 pts) ──────────────────────────────────────────────
+    w_price    = w.get("price",    35)
+    w_mileage  = w.get("mileage",  25)
+    w_age      = w.get("age",      20)
+    w_shipping = w.get("shipping", 10)
+    w_hybrid   = w.get("hybrid",   10)
+
+    # ── Price component ───────────────────────────────────────────────────────
     group_key = (listing.get("make"), listing.get("model"), year)
     avg_price = group_averages.get(group_key)
     if avg_price and avg_price > 0:
         pct_diff = (avg_price - price) / avg_price * 100
         pct_diff = max(-30.0, min(30.0, pct_diff))
-        price_score = ((pct_diff + 30) / 60) * 35
+        price_score = ((pct_diff + 30) / 60) * w_price
     else:
-        price_score = 17.5  # neutral when no group data
+        price_score = w_price / 2  # neutral when no group data
 
-    # ── Mileage component (25 pts) ────────────────────────────────────────────
+    # ── Mileage component ─────────────────────────────────────────────────────
     if mileage is None:
-        mileage_score = 12.5  # neutral
+        mileage_score = w_mileage / 2
     else:
-        mileage_score = max(0.0, 25.0 * (1 - mileage / max_mileage))
+        mileage_score = max(0.0, w_mileage * (1 - mileage / max_mileage))
 
-    # ── Age component (20 pts) — uses profile's year range as floor/ceiling ──
+    # ── Age component — uses profile's year range as floor/ceiling ────────────
     year_range = max(1, current_year - min_year)
     if year is None:
-        age_score = 10.0
+        age_score = w_age / 2
     else:
         clamped = max(min_year, min(current_year, year))
-        age_score = ((clamped - min_year) / year_range) * 20
+        age_score = ((clamped - min_year) / year_range) * w_age
 
-    # ── Shipping component (10 pts) — free/unknown = full; $1,500+ = 0 ────────
+    # ── Shipping component — free/unknown = full; $1,500+ = 0 ────────────────
     _MAX_SHIP = 1500.0
     if shipping is None:
-        shipping_score = 10.0   # unknown → assume free / not penalized
+        shipping_score = w_shipping
     else:
-        shipping_score = max(0.0, 10.0 * (1 - shipping / _MAX_SHIP))
+        shipping_score = max(0.0, w_shipping * (1 - shipping / _MAX_SHIP))
 
-    # ── Hybrid bonus (10 pts, optional) ──────────────────────────────────────
-    hybrid_score = (10.0 if listing.get("is_hybrid") else 0.0) if hybrid_bonus else 0.0
+    # ── Hybrid bonus (optional) ───────────────────────────────────────────────
+    hybrid_score = (w_hybrid if listing.get("is_hybrid") else 0.0) if hybrid_bonus else 0.0
 
     # ── Model preference bonus (up to 6 pts, auto-spread by rank) ────────────
     model_score = _model_preference_bonus(listing.get("model") or "", model_preference or [])

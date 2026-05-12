@@ -402,12 +402,19 @@ def _extract_monthly_from_dom(html: str) -> dict[str, float]:
     return result
 
 
-def extract_listings(html: str, make: str, model: str) -> list[dict]:
+def extract_listings(html: str, make: str, model: str, adapter=None) -> list[dict]:
     """
     Try all strategies in priority order.
     Returns normalized listings from the first strategy that yields results.
     Always attempts a DOM pass to backfill Carvana's monthly payment figure.
+
+    adapter: a DomainAdapter instance whose normalize() is called on each raw dict.
+             Defaults to CarvanaAdapter if not provided.
     """
+    if adapter is None:
+        from domains.automotive.adapter import CarvanaAdapter
+        adapter = CarvanaAdapter()
+
     listings: list[dict] = []
 
     for strategy_fn, strategy_name in [
@@ -419,7 +426,7 @@ def extract_listings(html: str, make: str, model: str) -> list[dict]:
         raw_list = strategy_fn(html)
         if raw_list:
             normalized = [
-                normalize_vehicle(r, make, model, strategy_name)
+                adapter.normalize(r, strategy_name, make=make, model=model)
                 for r in raw_list
             ]
             valid = [v for v in normalized if v is not None]
