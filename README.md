@@ -516,6 +516,15 @@ car_search/
 ├── dashboard_settings.json   # User-editable settings (managed via dashboard)
 ├── users.json                # Web portal user accounts (gitignored in .env)
 ├── vehicle_reference/        # Per-model markdown files for LLM context
+├── domains/                  # Domain adapter layer (Phase 1+)
+│   ├── base.py               # DomainAdapter, DomainConfig, FieldSchema abstractions
+│   ├── registry.py           # load_adapter(domain_id) → DomainAdapter
+│   ├── automotive/           # Carvana adapter
+│   │   ├── adapter.py        # CarvanaAdapter(DomainAdapter)
+│   │   ├── url_builder.py    # Carvana base64 URL builder (moved from scraper/urls.py)
+│   │   └── normalizer.py     # normalize_vehicle() (moved from scraper/extractor.py)
+│   ├── generic/              # Config-driven generic adapter (Phase 2+)
+│   └── saved/                # Saved DomainConfig JSON files (Phase 2+)
 ├── dashboard/
 │   ├── backend/              # FastAPI backend (serves both desktop and portal)
 │   │   ├── app.py            # App factory, CORS, static file serving
@@ -553,12 +562,12 @@ car_search/
 │   │   └── vite.config.ts    # base: '/portal/' for correct asset paths
 │   └── portal-dist/          # Built portal (committed; served by FastAPI)
 ├── scraper/
-│   ├── urls.py               # Carvana URL builder
+│   ├── urls.py               # Shim — re-exports from domains/automotive/url_builder.py
 │   ├── browser.py            # Playwright browser management
-│   └── extractor.py          # Data extraction (Next.js, Apollo, DOM fallback)
+│   └── extractor.py          # Data extraction strategies (Next.js, Apollo, DOM fallback)
 ├── analysis/
 │   ├── rules.py              # Rule-based filtering, enrichment, value scoring
-│   ├── llm.py                # LLM orchestrator — Ollama → Cerebras → Anthropic
+│   ├── llm.py                # LLM orchestrator — NVIDIA → Cerebras → Anthropic → Ollama
 │   ├── validator.py          # Brand-bleed validation + auto-correction
 │   ├── anthropic_client.py   # Anthropic API client (with prompt caching)
 │   ├── cerebras_client.py    # Cerebras API client (OpenAI-compatible)
