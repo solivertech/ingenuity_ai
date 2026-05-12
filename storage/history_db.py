@@ -2,6 +2,7 @@
 SQLite history database — persists listings across runs for trend detection.
 """
 
+import json
 import logging
 import sqlite3
 from dataclasses import dataclass
@@ -109,6 +110,7 @@ def init_db() -> None:
         conn.executescript(_DDL)
         _migrate_listings_profile_id(conn)
         _migrate_add_listing_extra_fields(conn)
+        _migrate_add_domain_fields(conn)
     log.debug("Database initialised at %s", config.DB_PATH)
 
 
@@ -119,6 +121,25 @@ def _migrate_add_listing_extra_fields(conn: sqlite3.Connection) -> None:
         if col not in cols:
             conn.execute(f"ALTER TABLE listings ADD COLUMN {col} {coltype}")
             log.info("Migration: added '%s' column to listings table", col)
+
+
+def _migrate_add_domain_fields(conn: sqlite3.Connection) -> None:
+    """Add domain_id, listing_id, primary_sort_value, listing_blob to listings; domain_id to runs."""
+    listing_cols = {row[1] for row in conn.execute("PRAGMA table_info(listings)").fetchall()}
+    for col, coltype, default in [
+        ("domain_id",          "TEXT", "'carvana_suvs'"),
+        ("listing_id",         "TEXT", "NULL"),
+        ("primary_sort_value", "REAL", "NULL"),
+        ("listing_blob",       "TEXT", "NULL"),
+    ]:
+        if col not in listing_cols:
+            conn.execute(f"ALTER TABLE listings ADD COLUMN {col} {coltype} DEFAULT {default}")
+            log.info("Migration: added '%s' column to listings table", col)
+
+    run_cols = {row[1] for row in conn.execute("PRAGMA table_info(runs)").fetchall()}
+    if "domain_id" not in run_cols:
+        conn.execute("ALTER TABLE runs ADD COLUMN domain_id TEXT DEFAULT 'carvana_suvs'")
+        log.info("Migration: added 'domain_id' column to runs table")
 
 
 def _migrate_listings_profile_id(conn: sqlite3.Connection) -> None:
@@ -167,35 +188,60 @@ def _migrate_listings_profile_id(conn: sqlite3.Connection) -> None:
 
 # ── Write operations ──────────────────────────────────────────────────────────
 
-def save_run(run: RunRecord) -> None:
+def save_run(run: RunRecord, domain_id: str = "carvana_suvs") -> None:
     with _connect() as conn:
         conn.execute(
             """INSERT OR REPLACE INTO runs
                (run_id, run_at, listings_found, listings_saved,
-                llm_backend, llm_model, duration_seconds)
-               VALUES (?,?,?,?,?,?,?)""",
+                llm_backend, llm_model, duration_seconds, domain_id)
+               VALUES (?,?,?,?,?,?,?,?)""",
             (
                 run.run_id, run.run_at, run.listings_found, run.listings_saved,
-                run.llm_backend, run.llm_model, run.duration_seconds,
+                run.llm_backend, run.llm_model, run.duration_seconds, domain_id,
             ),
         )
     log.debug("Run %s saved to DB", run.run_id)
 
 
-def save_listings(listings: list[dict], run_id: str, profile_id: str = "default") -> None:
+def save_listings(
+    listings: list[dict],
+    run_id: str,
+    profile_id: str = "default",
+    domain_id: str = "carvana_suvs",
+    domain_config=None,
+) -> None:
     """
     Insert listings into the listings and price_history tables.
     Duplicate (run_id, vin, profile_id) triples are silently ignored.
-    price_history uses (vin, run_id) as its key — if two profiles scrape the same
-    VIN in the same run the second insert is silently ignored (price is identical).
+
+    domain_config: optional DomainConfig used to resolve listing_id and
+    primary_sort_value for generic domains.
     """
     run_at = _get_run_at(run_id)
+
+    # Resolve which field is the primary sort (e.g. price for automotive)
+    primary_field_name = "price"
+    listing_id_field   = "vin"
+    if domain_config is not None:
+        primary = next((f for f in domain_config.fields if f.is_primary_sort), None)
+        if primary:
+            primary_field_name = primary.name
 
     listing_rows = []
     price_rows   = []
 
     for listing in listings:
-        vin = listing.get("vin") or ""
+        vin        = listing.get("vin") or ""
+        listing_id = (
+            listing.get(listing_id_field)
+            or listing.get("listing_id")
+            or listing.get("id")
+            or vin
+            or ""
+        )
+        primary_sort_value = listing.get(primary_field_name)
+        blob = json.dumps(listing)
+
         listing_rows.append((
             run_id,
             profile_id,
@@ -214,16 +260,21 @@ def save_listings(listings: list[dict], run_id: str, profile_id: str = "default"
             listing.get("color_exterior") or None,
             listing.get("shipping"),
             listing.get("url", ""),
+            domain_id,
+            listing_id,
+            primary_sort_value,
+            blob,
         ))
-        if vin and listing.get("price"):
-            price_rows.append((vin, run_id, run_at, listing["price"]))
+        if listing_id and primary_sort_value is not None:
+            price_rows.append((listing_id, run_id, run_at, primary_sort_value))
 
     with _connect() as conn:
         conn.executemany(
             """INSERT OR IGNORE INTO listings
                (run_id, profile_id, vin, scraped_at, year, make, model, trim, price, mileage,
-                monthly_estimated, value_score, is_hybrid, drivetrain, color_exterior, shipping, url)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                monthly_estimated, value_score, is_hybrid, drivetrain, color_exterior, shipping,
+                url, domain_id, listing_id, primary_sort_value, listing_blob)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             listing_rows,
         )
         if price_rows:
@@ -233,7 +284,8 @@ def save_listings(listings: list[dict], run_id: str, profile_id: str = "default"
                 price_rows,
             )
 
-    log.debug("Saved %d listings to DB for run %s (profile=%s)", len(listings), run_id, profile_id)
+    log.debug("Saved %d listings to DB for run %s (profile=%s, domain=%s)",
+              len(listings), run_id, profile_id, domain_id)
 
 
 # ── Read operations ───────────────────────────────────────────────────────────
@@ -248,19 +300,28 @@ def get_price_history(vin: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def get_new_listings(current_vins: set[str], profile_id: str = "default") -> set[str]:
-    """Return VINs in current_vins that have never appeared for this profile before."""
-    if not current_vins:
+def get_new_listings(
+    current_ids: set[str],
+    profile_id: str = "default",
+    id_field: str = "vin",
+) -> set[str]:
+    """
+    Return IDs in current_ids that have never appeared for this profile before.
+
+    id_field: the DB column to query — "vin" for automotive, "listing_id" for generic.
+    """
+    if not current_ids:
         return set()
+    col = id_field if id_field in ("vin", "listing_id") else "vin"
     with _connect() as conn:
-        placeholders = ",".join("?" * len(current_vins))
+        placeholders = ",".join("?" * len(current_ids))
         known = conn.execute(
-            f"SELECT DISTINCT vin FROM listings "
-            f"WHERE vin IN ({placeholders}) AND profile_id = ?",
-            list(current_vins) + [profile_id],
+            f"SELECT DISTINCT {col} FROM listings "
+            f"WHERE {col} IN ({placeholders}) AND profile_id = ?",
+            list(current_ids) + [profile_id],
         ).fetchall()
-    known_vins = {row["vin"] for row in known}
-    return current_vins - known_vins
+    known_ids = {row[col] for row in known}
+    return current_ids - known_ids
 
 
 def get_price_drops(listings: list[dict], threshold_pct: float = 5.0) -> list[dict]:

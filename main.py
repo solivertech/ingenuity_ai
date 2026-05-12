@@ -232,20 +232,31 @@ def _run_profile(
 
         _mark_alert_flags(enriched, new_vins, price_drops, profile.max_price)
 
-        csv_path = write_results(enriched, run_id, llm_backend=llm_result.backend_used)
+        csv_path = write_results(
+            enriched, run_id,
+            llm_backend=llm_result.backend_used,
+            domain_config=adapter.domain_config,
+        )
         log.debug("CSV written: %s", csv_path)
 
         duration = time.monotonic() - start_time
-        history_db.save_run(history_db.RunRecord(
-            run_id=run_id,
-            run_at=run_at,
-            listings_found=len(all_raw),
-            listings_saved=len(enriched),
-            llm_backend=llm_result.backend_used,
-            llm_model=llm_result.model_used,
-            duration_seconds=round(duration, 2),
-        ))
-        history_db.save_listings(enriched, run_id, profile.profile_id)
+        history_db.save_run(
+            history_db.RunRecord(
+                run_id=run_id,
+                run_at=run_at,
+                listings_found=len(all_raw),
+                listings_saved=len(enriched),
+                llm_backend=llm_result.backend_used,
+                llm_model=llm_result.model_used,
+                duration_seconds=round(duration, 2),
+            ),
+            domain_id=adapter.domain_config.domain_id,
+        )
+        history_db.save_listings(
+            enriched, run_id, profile.profile_id,
+            domain_id=adapter.domain_config.domain_id,
+            domain_config=adapter.domain_config,
+        )
         history_db.save_model_stats(enriched, run_id)
         history_db.save_profile_llm_analysis(profile.profile_id, run_id, run_at, llm_result)
         log.info("Saved %d listings to DB (run_id=%s, profile=%s)",
