@@ -130,6 +130,7 @@ def _profile_to_model(raw: dict) -> dict:
         "show_financing":         raw.get("show_financing", True),
         "down_payment":           raw.get("down_payment"),
         "email_only_on_new_or_drops": raw.get("email_only_on_new_or_drops", False),
+        "domain_id": raw.get("domain_id", "carvana_suvs"),
     }
 
 

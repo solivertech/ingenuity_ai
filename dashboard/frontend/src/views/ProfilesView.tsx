@@ -63,7 +63,12 @@ export function ProfilesView() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold text-gray-900">{p.label}</h3>
-                <code className="text-xs text-gray-400">{p.profile_id}</code>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <code className="text-xs text-gray-400">{p.profile_id}</code>
+                  <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full">
+                    {p.domain_id ?? 'carvana_suvs'}
+                  </span>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button

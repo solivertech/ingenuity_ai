@@ -82,7 +82,7 @@ export function HistoryView() {
           <table className="min-w-full text-sm divide-y divide-gray-100">
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
               <tr>
-                {['Date', 'Saved / Found', 'LLM', 'Model', 'Duration'].map(h => (
+                {['Date', 'Domain', 'Saved / Found', 'LLM', 'Model', 'Duration'].map(h => (
                   <th key={h} className="px-4 py-2 text-left font-medium">{h}</th>
                 ))}
               </tr>
@@ -91,6 +91,7 @@ export function HistoryView() {
               {pageRuns.map(r => (
                 <tr key={r.run_id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 text-gray-600">{fmtDate(r.run_at)}</td>
+                  <td className="px-4 py-2 text-gray-500 text-xs">{r.domain_id || '—'}</td>
                   <td className="px-4 py-2">
                     <span className="font-medium">{r.listings_saved}</span>
                     <span className="text-gray-400"> / {r.listings_found}</span>
@@ -101,7 +102,7 @@ export function HistoryView() {
                 </tr>
               ))}
               {runs.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No runs yet</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No runs yet</td></tr>
               )}
             </tbody>
           </table>

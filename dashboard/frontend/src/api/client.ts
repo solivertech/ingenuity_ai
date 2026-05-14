@@ -2,6 +2,7 @@
 
 export interface Profile {
   profile_id: string
+  domain_id?: string
   label: string
   vehicles: [string, string][]
   max_price: number | null
@@ -62,6 +63,7 @@ export interface SetupStatus {
 
 export interface RunRecord {
   run_id:           string
+  domain_id?:       string
   run_at:           string
   listings_found:   number
   listings_saved:   number
@@ -118,6 +120,34 @@ export interface ResendResponse {
 }
 
 export type Settings = Record<string, unknown>
+
+export interface FieldSchema {
+  name:            string
+  display_name:    string
+  json_paths:      string[]
+  css_selectors:   string[]
+  data_type:       'float' | 'int' | 'str' | 'bool'
+  unit:            string
+  required:        boolean
+  is_primary_sort: boolean
+}
+
+export interface DomainConfig {
+  domain_id:              string
+  display_name:           string
+  base_url:               string
+  pagination_style:       string
+  pagination_param:       string
+  max_pages:              number
+  fields:                 FieldSchema[]
+  filter_rules:           Record<string, unknown>[]
+  scoring_weights:        Record<string, number>
+  system_prompt_context:  string
+  alert_on_new:           boolean
+  alert_on_drop_pct:      number
+  created_at:             string
+  user_request:           string
+}
 
 // ── Base URL detection ────────────────────────────────────────────────────────
 //
@@ -223,5 +253,12 @@ export const api = {
     status:     () => request<{ backend: { running: boolean; pid: number }; ngrok: { running: boolean; domain: string } }>('/system/status'),
     ngrokStart: () => request<{ status: string; domain: string }>('/system/ngrok/start', { method: 'POST' }),
     ngrokStop:  () => request<{ status: string }>('/system/ngrok/stop', { method: 'POST' }),
+  },
+
+  domains: {
+    list:   ()                            => request<{ domains: DomainConfig[] }>('/domains'),
+    update: (id: string, patch: Partial<Pick<DomainConfig, 'display_name' | 'fields' | 'scoring_weights' | 'system_prompt_context'>>) =>
+              request<DomainConfig>(`/domains/${id}`, { method: 'PUT', body: JSON.stringify(patch) }),
+    delete: (id: string)                  => request<void>(`/domains/${id}`, { method: 'DELETE' }),
   },
 }

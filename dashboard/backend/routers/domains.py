@@ -7,6 +7,7 @@ DELETE /domains/{id}    — delete a saved domain config
 """
 
 import asyncio
+import dataclasses
 import json
 import logging
 from dataclasses import asdict
@@ -28,6 +29,13 @@ class DiscoverRequest(BaseModel):
     domain_id: str
     display_name: str
     max_retries: int = 2
+
+
+class PatchDomainRequest(BaseModel):
+    display_name: str | None = None
+    fields: list[dict] | None = None
+    scoring_weights: dict[str, float] | None = None
+    system_prompt_context: str | None = None
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -131,6 +139,35 @@ def list_domains():
     from discovery.domain_config import list_configs
     configs = list_configs()
     return {"domains": [asdict(c) for c in configs]}
+
+
+@router.put("/{domain_id}")
+def update_domain(domain_id: str, req: PatchDomainRequest):
+    """Patch display name, fields, scoring weights, or system prompt context."""
+    from discovery.domain_config import load_config, save_config
+    from domains.base import FieldSchema
+
+    try:
+        cfg = load_config(domain_id)
+    except FileNotFoundError:
+        raise HTTPException(404, f"Domain '{domain_id}' not found")
+
+    kwargs: dict = {}
+    if req.display_name is not None:
+        kwargs["display_name"] = req.display_name
+    if req.scoring_weights is not None:
+        kwargs["scoring_weights"] = req.scoring_weights
+    if req.system_prompt_context is not None:
+        kwargs["system_prompt_context"] = req.system_prompt_context
+    if req.fields is not None:
+        try:
+            kwargs["fields"] = [FieldSchema(**f) for f in req.fields]
+        except (TypeError, KeyError) as exc:
+            raise HTTPException(422, f"Invalid field schema: {exc}")
+
+    updated = dataclasses.replace(cfg, **kwargs)
+    save_config(updated)
+    return asdict(updated)
 
 
 @router.delete("/{domain_id}")

@@ -11,12 +11,14 @@ import { HistoryView }  from './views/HistoryView'
 import { DocsView }     from './views/DocsView'
 import { SystemView }   from './views/SystemView'
 import { SettingsView } from './views/SettingsView'
+import { DomainsView }  from './views/DomainsView'
 
 const NAV = [
   { to: '/run',      label: 'Run' },
   { to: '/schedule', label: 'Schedule' },
   { to: '/profiles', label: 'Profiles' },
   { to: '/history',  label: 'History' },
+  { to: '/domains',  label: 'Domains' },
   { to: '/docs',     label: 'Docs' },
   { to: '/system',   label: 'System' },
   { to: '/settings', label: 'Settings' },
@@ -147,6 +149,7 @@ export default function App() {
             <Route path="/schedule" element={<ScheduleView />} />
             <Route path="/profiles" element={<ProfilesView />} />
             <Route path="/history"  element={<HistoryView />} />
+            <Route path="/domains"  element={<DomainsView />} />
             <Route path="/docs"     element={<DocsView />} />
             <Route path="/system"   element={<SystemView />} />
             <Route path="/settings" element={<SettingsView />} />
