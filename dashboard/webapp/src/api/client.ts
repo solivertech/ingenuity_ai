@@ -159,6 +159,14 @@ export const api = {
       }),
   },
 
+  feedback: {
+    submit: (category: string, message: string, rating: number | null) =>
+      request<{ status: string; emailed: boolean }>('/portal/feedback', {
+        method: 'POST',
+        body: JSON.stringify({ category, message, rating }),
+      }),
+  },
+
   users: {
     list: () => request<PortalUser[]>('/portal/users'),
     create: (username: string, password: string, role: string, profile_id: string | null) =>

@@ -3,7 +3,7 @@ import { api, type Profile, type DocFile } from '../api/client'
 import { useAuth } from '../App'
 import { ProfileForm } from '../components/ProfileForm'
 
-type Tab = 'profile' | 'docs'
+type Tab = 'profile' | 'docs' | 'feedback'
 
 function Err({ msg }: { msg: string }) {
   return <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">{msg}</div>
@@ -424,6 +424,140 @@ function UserGeneratorModal({ profile, onClose, onSaved }: {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// Feedback tab
+// ══════════════════════════════════════════════════════════════════════════════
+
+const CATEGORIES = ['Bug Report', 'Feature Request', 'General', 'Other'] as const
+
+function StarRating({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  const [hovered, setHovered] = useState<number | null>(null)
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(value === n ? null : n)}
+          onMouseEnter={() => setHovered(n)}
+          onMouseLeave={() => setHovered(null)}
+          className="text-2xl focus:outline-none transition-colors"
+        >
+          <span className={(hovered ?? value ?? 0) >= n ? 'text-amber-400' : 'text-gray-300'}>★</span>
+        </button>
+      ))}
+      {value && (
+        <button type="button" onClick={() => onChange(null)}
+          className="ml-1 text-xs text-gray-400 hover:text-gray-600 self-center">
+          clear
+        </button>
+      )}
+    </div>
+  )
+}
+
+function FeedbackTab() {
+  const [category, setCategory] = useState<string>(CATEGORIES[0])
+  const [message, setMessage]   = useState('')
+  const [rating, setRating]     = useState<number | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess]   = useState(false)
+  const [err, setErr]           = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (message.trim().length < 5) { setErr('Please write at least a few words.'); return }
+    setErr(null); setSubmitting(true)
+    try {
+      await api.feedback.submit(category, message.trim(), rating)
+      setSuccess(true)
+      setMessage(''); setRating(null); setCategory(CATEGORIES[0])
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Submit failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="max-w-lg py-16 text-center mx-auto">
+        <div className="text-5xl mb-4">🎉</div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Thanks for the feedback!</h2>
+        <p className="text-sm text-gray-500 mb-6">It's been sent directly to the team.</p>
+        <button onClick={() => setSuccess(false)}
+          className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
+          Submit more feedback
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-xl">
+      <div className="mb-6">
+        <h2 className="text-base font-semibold text-gray-900">Beta Feedback</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Found a bug? Have an idea? We'd love to hear it — this goes straight to the developer.
+        </p>
+      </div>
+
+      {err && <div className="mb-4"><Err msg={err} /></div>}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(c => (
+              <button key={c} type="button"
+                onClick={() => setCategory(c)}
+                className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                  category === c
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'
+                }`}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Overall rating <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <StarRating value={rating} onChange={setRating} />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Message</label>
+          <textarea
+            required
+            minLength={5}
+            rows={5}
+            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            placeholder={
+              category === 'Bug Report'
+                ? "Describe what happened and how to reproduce it…"
+                : category === 'Feature Request'
+                ? "Describe the feature and why it would help you…"
+                : "Tell us what's on your mind…"
+            }
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-gray-400 text-right">{message.length} / 5000</p>
+        </div>
+
+        <button type="submit" disabled={submitting || message.trim().length < 5}
+          className="w-full bg-indigo-600 text-white rounded-md py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+          {submitting ? 'Sending…' : 'Send feedback'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // User page shell
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -453,22 +587,27 @@ export default function UserPage() {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 flex gap-1">
-          {(['profile', 'docs'] as Tab[]).map(t => (
+          {([
+            ['profile',  'My Profile'],
+            ['docs',     'Reference Docs'],
+            ['feedback', 'Feedback'],
+          ] as [Tab, string][]).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                 tab === t
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}>
-              {t === 'profile' ? 'My Profile' : 'Reference Docs'}
+              {label}
             </button>
           ))}
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {tab === 'profile' && <ProfileTab docs={docs} />}
-        {tab === 'docs'    && <DocsTab />}
+        {tab === 'profile'  && <ProfileTab docs={docs} />}
+        {tab === 'docs'     && <DocsTab />}
+        {tab === 'feedback' && <FeedbackTab />}
       </main>
     </div>
   )

@@ -203,6 +203,72 @@ def send_summary(
     return False
 
 
+def send_feedback_email(
+    username: str,
+    category: str,
+    message: str,
+    rating: int | None,
+    to_address: str,
+) -> bool:
+    """
+    Send a single beta-feedback email via the existing Gmail OAuth credentials.
+    Returns True on success, False if not configured or send fails.
+    """
+    if not _is_configured():
+        log.warning("Feedback email not sent — Gmail OAuth not configured")
+        return False
+
+    access_token = _get_access_token()
+    if not access_token:
+        return False
+
+    stars = ("★" * rating + "☆" * (5 - rating)) if rating else "not rated"
+    subject = f"[Autospy Feedback] {category} from {username}"
+    html = f"""
+<html><body style="font-family:sans-serif;max-width:600px;margin:40px auto;color:#222">
+  <h2 style="color:#4f46e5;margin-bottom:4px">Autospy Beta Feedback</h2>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin-bottom:24px">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr><td style="padding:6px 0;color:#6b7280;width:110px">From</td>
+        <td style="padding:6px 0;font-weight:600">{username}</td></tr>
+    <tr><td style="padding:6px 0;color:#6b7280">Category</td>
+        <td style="padding:6px 0">{category}</td></tr>
+    <tr><td style="padding:6px 0;color:#6b7280">Rating</td>
+        <td style="padding:6px 0;font-size:18px;letter-spacing:2px">{stars}</td></tr>
+  </table>
+  <div style="margin-top:20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;font-size:14px;line-height:1.6;white-space:pre-wrap">{message}</div>
+  <p style="margin-top:24px;font-size:12px;color:#9ca3af">Sent automatically by Autospy · {datetime.now().strftime("%Y-%m-%d %H:%M")}</p>
+</body></html>
+"""
+
+    from_addr = (
+        f"{config.EMAIL_FROM_NAME} <{config.GMAIL_SENDER}>"
+        if config.EMAIL_FROM_NAME
+        else config.GMAIL_SENDER
+    )
+
+    msg = MIMEMultipart("alternative")
+    msg.attach(MIMEText(html, "html", "utf-8"))
+    msg["Subject"] = subject
+    msg["From"]    = from_addr
+    msg["To"]      = to_address
+
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    try:
+        resp = requests.post(
+            _SEND_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+            json={"raw": raw},
+            timeout=20,
+        )
+        resp.raise_for_status()
+        log.info("Feedback email sent to %s", to_address)
+        return True
+    except Exception as exc:
+        log.error("Feedback email send failed: %s", exc)
+        return False
+
+
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 def _is_configured() -> bool:

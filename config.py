@@ -87,4 +87,5 @@ REQUEST_DELAY_SECONDS: int  = _s["request_delay_seconds"]
 PAGE_TIMEOUT_SECONDS:  int  = _s["page_timeout_seconds"]
 MAX_PAGES_PER_SEARCH:  int  = _s["max_pages_per_search"]
 SCRAPING_DELAY_MS:     int  = _s["scraping_delay_ms"]
+FEEDBACK_EMAIL_TO:     str  = _s["feedback_email_to"]
 PROXY_URL:             str  = ""  # Stub for future residential proxy support

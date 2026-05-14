@@ -47,6 +47,7 @@ class _LocalOnlyMiddleware(BaseHTTPMiddleware):
 from dashboard.backend.routers import (
     docs,
     domains,
+    feedback,
     history,
     profiles,
     runs,
@@ -140,6 +141,7 @@ def create_app() -> FastAPI:
     # Web portal routes (JWT-gated)
     application.include_router(auth.router)
     application.include_router(portal.router)
+    application.include_router(feedback.router)
 
     # ── Health ────────────────────────────────────────────────────────────────
     @application.get("/ping", tags=["health"])
