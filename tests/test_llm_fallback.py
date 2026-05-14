@@ -28,16 +28,26 @@ def _listings():
 
 
 def _analyzer() -> Any:
-    """Return an LLMAnalyzer with both backends pre-configured."""
+    """Return an LLMAnalyzer with all backends pre-configured.
+
+    NVIDIA and Cerebras default to is_configured()=False so existing
+    Ollama/Anthropic tests are unaffected; override per-test when needed.
+    """
     analyzer = LLMAnalyzer.__new__(LLMAnalyzer)
-    analyzer.ollama         = MagicMock()
-    analyzer.anthropic      = MagicMock()
-    analyzer.backend_used   = None
+    analyzer.nvidia          = MagicMock()
+    analyzer.nvidia.is_configured.return_value = False
+    analyzer.cerebras        = MagicMock()
+    analyzer.cerebras.is_configured.return_value = False
+    analyzer.anthropic       = MagicMock()
+    analyzer.anthropic.is_configured.return_value = False
+    analyzer.ollama          = MagicMock()
+    analyzer.backend_used    = None
     analyzer._reference_doc  = ""
     analyzer._show_financing = True
     analyzer._down_payment   = 3000
     analyzer._has_hybrid     = False
     analyzer._max_price      = 0
+    analyzer._domain_config  = None
     return analyzer
 
 
@@ -264,6 +274,7 @@ def _bare_analyzer() -> Any:
     analyzer._down_payment   = 3000
     analyzer._has_hybrid     = False
     analyzer._max_price      = 0
+    analyzer._domain_config  = None
     return analyzer
 
 

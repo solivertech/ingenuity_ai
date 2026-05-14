@@ -31,6 +31,8 @@ class LLMResult:
 
 
 class LLMAnalyzer:
+    _domain_config = None  # class-level default so __new__-created instances always have it
+
     def __init__(
         self,
         reference_doc: str = "",
@@ -38,6 +40,7 @@ class LLMAnalyzer:
         has_hybrid_interest: bool = False,
         show_financing: bool = True,
         down_payment: int | None = None,
+        domain_config=None,  # DomainConfig | None — when set, enables generic prompts
     ):
         self.nvidia = NvidiaClient(
             api_key=config.NVIDIA_API_KEY,
@@ -64,6 +67,7 @@ class LLMAnalyzer:
         self._has_hybrid      = has_hybrid_interest
         self._show_financing  = show_financing
         self._down_payment    = down_payment if down_payment is not None else config.DOWN_PAYMENT
+        self._domain_config   = domain_config
 
     def analyze(
         self,
@@ -314,12 +318,57 @@ class LLMAnalyzer:
             log.warning("LLM did not return a parseable TOP_PICKS line")
         return cleaned, top_pick_vins
 
+    def _build_generic_table(self, listings: list[dict]) -> str:
+        """
+        Dynamic markdown table built from domain_config.fields.
+        Sets self._last_id_to_vin using the first available identifier field.
+        """
+        _ID_FIELDS = ("vin", "id", "listing_id", "url")
+        top_listings = listings[:30]
+        self._last_id_to_vin: dict[int, str] = {}
+
+        fields = self._domain_config.fields
+        col_names = ["ID"] + [f.display_name for f in fields] + ["Score"]
+        header = "| " + " | ".join(col_names) + " |"
+        sep    = "| " + " | ".join(["---"] * len(col_names)) + " |"
+
+        rows: list[str] = []
+        for idx, r in enumerate(top_listings, start=1):
+            uid = next((str(r[k]) for k in _ID_FIELDS if r.get(k)), "")
+            self._last_id_to_vin[idx] = uid
+
+            cells = [str(idx)]
+            for f in fields:
+                val = r.get(f.name)
+                if val is None:
+                    cells.append("—")
+                elif f.data_type in ("float", "int"):
+                    try:
+                        n = float(val)
+                        if f.unit == "$":
+                            cells.append(f"${n:,.0f}")
+                        elif f.unit:
+                            cells.append(f"{n:,.0f} {f.unit}")
+                        else:
+                            cells.append(f"{n:,.0f}")
+                    except (ValueError, TypeError):
+                        cells.append(str(val))
+                else:
+                    cells.append(str(val))
+            cells.append(str(int(r.get("value_score") or 0)))
+            rows.append("| " + " | ".join(cells) + " |")
+
+        return "\n".join([header, sep] + rows)
+
     def _build_listings_table(self, listings: list[dict]) -> str:
         """
         Build the markdown listings table and set self._last_id_to_vin.
         Caps at 30 rows. Returns the table string.
         Shared by build_prompt() and build_synthesis_prompt().
         """
+        if self._domain_config is not None:
+            return self._build_generic_table(listings)
+
         top_listings = listings[:min(30, len(listings))]
         self._last_id_to_vin: dict[int, str] = {}
 
@@ -351,11 +400,68 @@ class LLMAnalyzer:
 
         return "\n".join([header, sep] + rows)
 
+    def _build_generic_prompt(self, listings: list[dict]) -> str:
+        """Per-group analysis prompt for non-automotive domains."""
+        from datetime import datetime, timezone
+
+        run_ts      = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        total_shown = min(30, len(listings))
+        top_listings = listings[:total_shown]
+
+        system_context = (
+            self._domain_config.system_prompt_context
+            or f"You are an analyst evaluating {self._domain_config.display_name} listings."
+        )
+
+        header = f"Run: {run_ts} | Listings shown: {total_shown}"
+        table  = self._build_listings_table(listings)
+
+        preview_fields = self._domain_config.fields[:4]
+        top5_lines = "\n".join(
+            "ID {}. {}{}".format(
+                i + 1,
+                ", ".join(
+                    "{}: {}{}".format(
+                        f.display_name,
+                        r.get(f.name, "N/A"),
+                        (" " + f.unit) if f.unit else "",
+                    )
+                    for f in preview_fields
+                ),
+                f", score={int(r.get('value_score') or 0)}",
+            )
+            for i, r in enumerate(top_listings[:5])
+        )
+
+        analysis_request = (
+            "1. Identify the top 3 overall best deals, explaining your reasoning for each.\n"
+            "2. Flag any listings that appear unusual (anomalous values, outliers).\n"
+            "3. Note any patterns or trends across the full dataset.\n"
+            "4. Give one clear final recommendation with a brief rationale.\n\n"
+            "Keep the response under 600 words. Use plain language. Avoid filler phrases.\n"
+            "Refer to listings by their key field values — do not use ID numbers in prose.\n\n"
+            "At the very end of your response, on its own line, write exactly:\n"
+            "TOP_PICKS: <comma-separated IDs of your top 3 recommended listings>\n"
+            "Example: TOP_PICKS: 2,5,11\n"
+            "Use the ID column from the table above. Do not add any text after this line."
+        )
+
+        return (
+            f"[SYSTEM CONTEXT]\n{system_context}\n\n"
+            f"[LISTINGS DATA]\n{header}\n\n"
+            f"{table}\n\n"
+            f"Top 5 by value score:\n{top5_lines}\n\n"
+            f"[ANALYSIS REQUEST]\n{analysis_request}"
+        )
+
     def build_prompt(self, listings: list[dict]) -> str:
         """
         Build the per-make analysis prompt.
         Caps the listings table at 30 rows (top by value_score).
         """
+        if self._domain_config is not None:
+            return self._build_generic_prompt(listings)
+
         from datetime import datetime, timezone
 
         run_ts      = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -427,6 +533,50 @@ class LLMAnalyzer:
             f"[ANALYSIS REQUEST]\n{analysis_request}"
         )
 
+    def _build_generic_synthesis_prompt(
+        self,
+        all_listings: list[dict],
+        per_group_analyses: list[tuple[str, str]],
+    ) -> str:
+        """Cross-group synthesis prompt for non-automotive domains."""
+        system_context = (
+            (
+                self._domain_config.system_prompt_context
+                or f"You are an analyst evaluating {self._domain_config.display_name} listings."
+            )
+            + " Multiple per-group analyses have been completed. "
+            "Synthesize them into a single cross-group recommendation."
+        )
+
+        summaries = "\n\n".join(
+            f"### {group}\n{analysis[:1200]}{'…' if len(analysis) > 1200 else ''}"
+            for group, analysis in per_group_analyses
+        )
+
+        table = self._build_listings_table(all_listings)
+
+        synthesis_request = (
+            "Based on the per-group analyses above and the full listing table below, provide:\n\n"
+            "1. **Top 3 best deals across all groups.** For each, state the key identifying "
+            "details and why it beats cross-group alternatives.\n"
+            "2. **Unusual listings** — flag any anomalies across the full dataset.\n"
+            "3. **Cross-group patterns** — note any trends visible across groups.\n"
+            "4. **One final recommendation** — a single specific listing — with a concise rationale.\n\n"
+            "Keep this section under 600 words. Use plain language. Avoid filler phrases.\n\n"
+            "IMPORTANT: At the very end of your response, on its own line, write exactly:\n"
+            "TOP_PICKS: <comma-separated IDs of your top 3 picks from the full listing table>\n"
+            "Example: TOP_PICKS: 3,11,22\n"
+            "The IDs must come from the ID column of the [FULL LISTING TABLE] above. "
+            "Do not add any text after this line."
+        )
+
+        return (
+            f"[SYSTEM CONTEXT]\n{system_context}\n\n"
+            f"[PER-GROUP ANALYSES]\n{summaries}\n\n"
+            f"[FULL LISTING TABLE — ALL GROUPS]\n{table}\n\n"
+            f"[SYNTHESIS REQUEST]\n{synthesis_request}"
+        )
+
     def build_synthesis_prompt(
         self,
         all_listings: list[dict],
@@ -442,6 +592,9 @@ class LLMAnalyzer:
         Calling this also sets self._last_id_to_vin against `all_listings` so
         that _parse_top_picks correctly maps IDs back to VINs.
         """
+        if self._domain_config is not None:
+            return self._build_generic_synthesis_prompt(all_listings, per_make_analyses)
+
         budget_str = f"${self._max_price:,}" if self._max_price else "their stated budget"
         fuel_note  = (
             "particularly interested in hybrid trims"
