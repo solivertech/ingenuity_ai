@@ -2,7 +2,7 @@
 
 export interface Profile {
   profile_id: string
-  domain_id?: string
+  domain_id: string
   label: string
   vehicles: [string, string][]
   max_price: number | null
@@ -10,6 +10,7 @@ export interface Profile {
   min_year: number
   max_year: number
   email_to: string[]
+  filter_rules: Record<string, unknown>[]
   fuel_type_filters: (string | null)[]
   model_preference: string[]
   reference_doc_path: string | null

@@ -26,12 +26,17 @@ _PROFILE_ID_RE = re.compile(r"^[a-z0-9_]+$")
 class ProfileModel(BaseModel):
     profile_id:             str
     label:                  str
-    vehicles:               list[list[str]]          # [[make, model], ...]
-    max_price:              int | None = None
-    max_mileage:            int
-    min_year:               int
-    max_year:               int
     email_to:               list[str]
+    # Automotive fields — optional for non-carvana_suvs domains
+    vehicles:               list[list[str]] = Field(default_factory=list)   # [[make, model], ...]
+    max_price:              int | None = None
+    max_mileage:            int = 0
+    min_year:               int = 0
+    max_year:               int = 9999
+    # Domain fields
+    domain_id:              str = "carvana_suvs"
+    filter_rules:           list[dict] = Field(default_factory=list)
+    # Existing optional fields
     fuel_type_filters:      list[str | None] = Field(default_factory=lambda: [None])
     model_preference:       list[str] = Field(default_factory=list)
     reference_doc_path:     str | None = None
@@ -47,15 +52,16 @@ class ProfileModel(BaseModel):
             raise ValueError("profile_id must match [a-z0-9_]+")
         if not self.label.strip():
             raise ValueError("label must not be empty")
-        if not self.vehicles:
-            raise ValueError("vehicles must contain at least one entry")
-        for v in self.vehicles:
-            if len(v) != 2 or not all(isinstance(x, str) and x.strip() for x in v):
-                raise ValueError("each vehicle must be [make, model] with non-empty strings")
         if not self.email_to:
             raise ValueError("email_to must contain at least one address")
-        if self.min_year > self.max_year:
-            raise ValueError("min_year must be <= max_year")
+        if self.domain_id == "carvana_suvs":
+            if not self.vehicles:
+                raise ValueError("vehicles must contain at least one entry for carvana_suvs profiles")
+            for v in self.vehicles:
+                if len(v) != 2 or not all(isinstance(x, str) and x.strip() for x in v):
+                    raise ValueError("each vehicle must be [make, model] with non-empty strings")
+            if self.min_year > self.max_year:
+                raise ValueError("min_year must be <= max_year")
         return self
 
 
@@ -85,12 +91,14 @@ def _model_to_raw(p: ProfileModel) -> dict[str, Any]:
     d: dict[str, Any] = {
         "profile_id":             p.profile_id,
         "label":                  p.label,
+        "domain_id":              p.domain_id,
         "vehicles":               p.vehicles,
         "max_price":              p.max_price,
         "max_mileage":            p.max_mileage,
         "min_year":               p.min_year,
         "max_year":               p.max_year,
         "email_to":               p.email_to,
+        "filter_rules":           p.filter_rules,
         "fuel_type_filters":      p.fuel_type_filters,
         "model_preference":       p.model_preference,
         "excluded_trim_keywords": p.excluded_trim_keywords,
@@ -130,7 +138,8 @@ def _profile_to_model(raw: dict) -> dict:
         "show_financing":         raw.get("show_financing", True),
         "down_payment":           raw.get("down_payment"),
         "email_only_on_new_or_drops": raw.get("email_only_on_new_or_drops", False),
-        "domain_id": raw.get("domain_id", "carvana_suvs"),
+        "domain_id":   raw.get("domain_id", "carvana_suvs"),
+        "filter_rules": raw.get("filter_rules") or [],
     }
 
 

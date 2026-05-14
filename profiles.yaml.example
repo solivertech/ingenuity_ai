@@ -1,0 +1,48 @@
+profiles:
+
+  # ── Automotive profile (Carvana) ──────────────────────────────────────────
+  # domain_id defaults to "carvana_suvs" — omit it or set it explicitly.
+  # All automotive fields (vehicles, max_mileage, min_year, max_year) are
+  # required for carvana_suvs profiles.
+  - profile_id: family_suv
+    label: Family SUV Hunt
+    domain_id: carvana_suvs      # optional — "carvana_suvs" is the default
+    vehicles:
+      - [Toyota, Highlander]
+      - [Honda, Pilot]
+    max_price: 38000
+    max_mileage: 60000
+    min_year: 2020
+    max_year: 2024
+    email_to:
+      - you@example.com
+    fuel_type_filters:
+      - null                     # null = all fuel types
+    model_preference:
+      - Highlander Hybrid
+      - Pilot TrailSport
+    excluded_trim_keywords:
+      - base
+      - l
+    show_financing: true
+    down_payment: 5000
+    email_only_on_new_or_drops: false
+
+  # ── Generic domain profile ────────────────────────────────────────────────
+  # Use this shape when domain_id refers to a non-automotive discovered domain.
+  # The automotive fields (vehicles, max_mileage, min_year, max_year) are
+  # optional and ignored by the generic pipeline; use filter_rules instead.
+  - profile_id: rental_apartments
+    label: Downtown Rentals
+    domain_id: zillow_rentals     # must match a saved domain config ID
+    email_to:
+      - you@example.com
+    filter_rules:
+      - field: price
+        op: lte
+        value: 2500
+      - field: bedrooms
+        op: gte
+        value: 2
+    show_financing: false
+    email_only_on_new_or_drops: true

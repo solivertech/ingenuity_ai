@@ -15,22 +15,26 @@ import config
 
 log = logging.getLogger(__name__)
 
-_REQUIRED_FIELDS = {
-    "profile_id", "label", "vehicles",
-    "max_mileage", "min_year", "max_year", "email_to",
-}
+_REQUIRED_FIELDS = {"profile_id", "label", "email_to"}
+# These fields are additionally required for automotive (carvana_suvs) profiles.
+_AUTOMOTIVE_REQUIRED_FIELDS = {"vehicles", "max_mileage", "min_year", "max_year"}
 
 
 @dataclass
 class SearchProfile:
     profile_id:         str
     label:              str
-    vehicles:           list[tuple[str, str]]   # [(make, model), ...]
-    max_price:          Optional[int]   # None = no upper price limit
-    max_mileage:        int
-    min_year:           int
-    max_year:           int
     email_to:           list[str]
+    # Automotive-specific — optional for generic domains; defaults allow generic profiles to omit them
+    vehicles:           list[tuple[str, str]] = field(default_factory=list)  # [(make, model), ...]
+    max_price:          Optional[int] = None    # None = no upper price limit
+    max_mileage:        int = 0
+    min_year:           int = 0
+    max_year:           int = 9999
+    # Domain fields — domain_id defaults to carvana_suvs for backward compatibility
+    domain_id:          str = "carvana_suvs"
+    filter_rules:       list[dict] = field(default_factory=list)  # generic filter rules for non-automotive domains
+    # Remaining optional fields
     fuel_type_filters:        list[str | None] = field(default_factory=lambda: [None])
     model_preference:         list[str] = field(default_factory=list)  # ordered best→worst; [] = no preference
     reference_doc_path:       Optional[str] = None
@@ -64,7 +68,11 @@ def load_profiles(path: str) -> list[SearchProfile]:
     seen_ids: set[str] = set()
 
     for i, raw in enumerate(raw_profiles):
-        missing = _REQUIRED_FIELDS - set(raw.keys())
+        domain_id = raw.get("domain_id", "carvana_suvs")
+        effective_required = _REQUIRED_FIELDS | (
+            _AUTOMOTIVE_REQUIRED_FIELDS if domain_id == "carvana_suvs" else set()
+        )
+        missing = effective_required - set(raw.keys())
         if missing:
             raise ValueError(f"Profile #{i + 1} is missing required fields: {missing}")
 
@@ -115,15 +123,20 @@ def load_profiles(path: str) -> list[SearchProfile]:
         excluded_years_raw = raw.get("excluded_years") or []
         excluded_years = [int(y) for y in excluded_years_raw]
 
+        filter_rules_raw = raw.get("filter_rules") or []
+        filter_rules = [dict(r) for r in filter_rules_raw if isinstance(r, dict)]
+
         profiles.append(SearchProfile(
             profile_id=pid,
             label=str(raw["label"]),
+            email_to=email_to,
             vehicles=vehicles,
             max_price=int(raw["max_price"]) if raw.get("max_price") is not None else None,
-            max_mileage=int(raw["max_mileage"]),
-            min_year=int(raw["min_year"]),
-            max_year=int(raw["max_year"]),
-            email_to=email_to,
+            max_mileage=int(raw["max_mileage"]) if raw.get("max_mileage") is not None else 0,
+            min_year=int(raw["min_year"]) if raw.get("min_year") is not None else 0,
+            max_year=int(raw["max_year"]) if raw.get("max_year") is not None else 9999,
+            domain_id=str(domain_id),
+            filter_rules=filter_rules,
             fuel_type_filters=fuel_type_filters,
             model_preference=model_preference,
             reference_doc_path=raw.get("reference_doc_path"),
