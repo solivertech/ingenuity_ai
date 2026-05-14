@@ -31,6 +31,7 @@ _DEFAULTS: dict = {
     "headless": True,
     "request_delay_seconds": 4,
     "page_timeout_seconds": 30,
+    "scraping_delay_ms": 1500,
     "ollama_enabled": False,
     "ollama_timeout": 600,
     "ollama_ref_doc_max_chars": 6000,

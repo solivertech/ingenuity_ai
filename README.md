@@ -158,6 +158,20 @@ Shows all past runs and pricing trends.
 - **Runs table** — date, listings saved vs. found, LLM backend used, run duration
 - **Price trends** — line charts of average and minimum price per model over the last 30/60/90 days
 
+### Domains
+
+Manage scraped domains and onboard new ones with the AI-powered discovery wizard.
+
+- **Domain cards** — each saved domain config shows its field list; click **Delete** to remove
+- **Discover new domain** — opens the 5-step Domain Wizard:
+  1. Enter the listing URL and describe what fields you want to capture
+  2. Watch the AI scrape the page and discover fields in real time (streamed log)
+  3. Review the discovered field table (name, type, unit, required, primary sort)
+  4. Optionally edit display names, types, and units before saving
+  5. Confirmation — the domain is saved and ready to use in profiles
+
+Once a domain is saved its `domain_id` can be set on any profile. Non-automotive domains use `filter_rules` instead of the automotive `max_price` / `max_mileage` / `min_year` / `max_year` fields.
+
 ### Docs
 
 Manage the vehicle reference markdown files in `vehicle_reference/`. These files are fed to the LLM to improve analysis quality for specific models.
@@ -371,11 +385,14 @@ profiles:
   - profile_id: my_search          # unique slug — letters, numbers, underscores only
     label: "My SUV Search"         # shown in email subject and body
 
-    vehicles:                      # [make, model] pairs to search
+    domain_id: carvana_suvs        # optional — defaults to carvana_suvs
+                                   # set to a discovered domain's ID for generic domains
+
+    vehicles:                      # [make, model] pairs to search (automotive only)
       - [Honda, CR-V]
       - [Toyota, RAV4]
 
-    max_price: 30000               # omit or null for no upper limit
+    max_price: 30000               # omit or null for no upper limit (automotive only)
     max_mileage: 80000
     min_year: 2021
     max_year: 2025
@@ -399,6 +416,21 @@ profiles:
 
     email_to:
       - you@gmail.com
+
+  # Generic (non-automotive) domain example:
+  - profile_id: my_rentals
+    label: "Apartment Hunt"
+    domain_id: zillow_rentals          # must match a saved domain config ID
+    email_to:
+      - you@gmail.com
+    filter_rules:                      # replaces automotive fields for generic domains
+      - field: price
+        op: lte
+        value: 2000
+      - field: bedrooms
+        op: gte
+        value: 2
+    show_financing: false
 ```
 
 ---
@@ -417,6 +449,7 @@ Global settings are stored in `dashboard_settings.json` and editable from the da
 | `max_pages_per_search` | `5` | Carvana result pages scraped per vehicle/fuel-type combo |
 | `request_delay_seconds` | `4` | Pause between page requests |
 | `page_timeout_seconds` | `30` | Playwright page load timeout |
+| `scraping_delay_ms` | `1500` | Delay (ms) between pages during AI schema discovery |
 | `headless` | `true` | Run Chromium without a visible window |
 | `send_email` | `true` | Send email after each run |
 | `ollama_enabled` | `false` | Include Ollama in the auto fallback chain |

@@ -6,6 +6,8 @@ produce field extraction paths, then validates against live data.
 import json
 import logging
 import re
+import urllib.parse
+import urllib.robotparser
 from dataclasses import asdict
 from datetime import datetime, timezone
 
@@ -57,6 +59,8 @@ class SchemaAgent:
         Fetch the target URL and ask the LLM to produce a DomainConfig.
         Returns None if discovery fails.
         """
+        _check_robots_txt(url)
+
         from scraper.browser import Browser
 
         with Browser() as browser:
@@ -140,6 +144,37 @@ class SchemaAgent:
 
 
 # ── Module-level helpers ───────────────────────────────────────────────────────
+
+def _check_robots_txt(url: str) -> None:
+    """
+    Fetch robots.txt for the target domain and warn if scraping is disallowed.
+    Never raises — a failed check is treated as permissive (network errors, 404s).
+    """
+    import requests
+
+    try:
+        parsed = urllib.parse.urlparse(url)
+        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+        resp = requests.get(
+            robots_url,
+            timeout=5,
+            headers={"User-Agent": "Autospy"},
+        )
+        if resp.status_code != 200:
+            log.debug("robots.txt not found at %s (HTTP %s)", robots_url, resp.status_code)
+            return
+        rp = urllib.robotparser.RobotFileParser()
+        rp.parse(resp.text.splitlines())
+        if not rp.can_fetch("*", url):
+            log.warning(
+                "robots.txt at %s disallows scraping %s — "
+                "proceeding anyway; ensure you have authorization.",
+                robots_url, url,
+            )
+        else:
+            log.debug("robots.txt permits scraping %s", url)
+    except Exception as exc:
+        log.debug("robots.txt check skipped for %s: %s", url, exc)
 
 def _extract_page_context(html: str) -> str:
     """Pull structured JSON and a short HTML sample from raw page HTML."""
