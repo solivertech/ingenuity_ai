@@ -516,15 +516,20 @@ car_search/
 ├── dashboard_settings.json   # User-editable settings (managed via dashboard)
 ├── users.json                # Web portal user accounts (gitignored in .env)
 ├── vehicle_reference/        # Per-model markdown files for LLM context
-├── domains/                  # Domain adapter layer (Phase 1+)
+├── domains/                  # Domain adapter layer
 │   ├── base.py               # DomainAdapter, DomainConfig, FieldSchema abstractions
 │   ├── registry.py           # load_adapter(domain_id) → DomainAdapter
 │   ├── automotive/           # Carvana adapter
-│   │   ├── adapter.py        # CarvanaAdapter(DomainAdapter)
+│   │   ├── adapter.py        # CarvanaAdapter(DomainAdapter) + AUTOMOTIVE_CONFIG
 │   │   ├── url_builder.py    # Carvana base64 URL builder (moved from scraper/urls.py)
 │   │   └── normalizer.py     # normalize_vehicle() (moved from scraper/extractor.py)
-│   ├── generic/              # Config-driven generic adapter (Phase 2+)
-│   └── saved/                # Saved DomainConfig JSON files (Phase 2+)
+│   ├── generic/
+│   │   └── adapter.py        # GenericAdapter — fully config-driven, no hardcoded logic
+│   └── saved/                # Saved DomainConfig JSON files (<domain_id>.json)
+├── discovery/                # AI schema discovery + domain config persistence
+│   ├── domain_config.py      # save_config / load_config / list_configs / delete_config
+│   ├── schema_agent.py       # SchemaAgent: LLM-powered field detection from raw HTML
+│   └── field_validator.py    # spot_check: null-rate validation of discovered field paths
 ├── dashboard/
 │   ├── backend/              # FastAPI backend (serves both desktop and portal)
 │   │   ├── app.py            # App factory, CORS, static file serving
@@ -543,6 +548,7 @@ car_search/
 │   │       ├── setup.py      # Desktop: health checks, Playwright/Gmail install
 │   │       ├── schedule.py   # Desktop: scheduled run management
 │   │       ├── system.py     # Desktop: backend status, log stream, ngrok control
+│   │       ├── domains.py    # Desktop: POST /domains/discover (SSE), GET /domains, DELETE
 │   │       ├── auth.py       # Portal: login, setup, JWT /me endpoint
 │   │       └── portal.py     # Portal: auth-gated profiles, docs, settings, users
 │   ├── frontend/             # React + Vite + Tailwind desktop dashboard

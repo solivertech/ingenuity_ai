@@ -46,6 +46,7 @@ class _LocalOnlyMiddleware(BaseHTTPMiddleware):
 
 from dashboard.backend.routers import (
     docs,
+    domains,
     history,
     profiles,
     runs,
@@ -126,6 +127,7 @@ def create_app() -> FastAPI:
 
     # ── Routers ───────────────────────────────────────────────────────────────
     # Desktop dashboard routes (no auth — localhost only)
+    application.include_router(domains.router)
     application.include_router(profiles.router)
     application.include_router(runs.router)
     application.include_router(history.router)
