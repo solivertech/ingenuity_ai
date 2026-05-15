@@ -1,0 +1,54 @@
+{
+  "domain_id": "home_depot",
+  "display_name": "Home Depot",
+  "base_url": "https://www.homedepot.com",
+  "pagination_style": "none",
+  "pagination_param": "",
+  "max_pages": 10,
+  "fields": [
+    {
+      "name": "product_name",
+      "display_name": "Product Name",
+      "json_paths": [],
+      "css_selectors": [
+        ".product-name"
+      ],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "price",
+      "display_name": "Price",
+      "json_paths": [],
+      "css_selectors": [
+        ".price"
+      ],
+      "data_type": "float",
+      "unit": "$",
+      "required": true,
+      "is_primary_sort": true
+    },
+    {
+      "name": "is_battery_powered",
+      "display_name": "Is Battery Powered",
+      "json_paths": [],
+      "css_selectors": [],
+      "data_type": "bool",
+      "unit": "",
+      "required": false,
+      "is_primary_sort": false
+    }
+  ],
+  "filter_rules": [],
+  "scoring_weights": {
+    "price": 80,
+    "is_battery_powered": 20
+  },
+  "system_prompt_context": "You are a Home Depot product analyst tracking lawnmower prices",
+  "alert_on_new": true,
+  "alert_on_drop_pct": 5.0,
+  "created_at": "2026-05-15T21:36:07.855649+00:00",
+  "user_request": "I want to track lawnmower prices. Battery powered electric lawnmowers are preferred."
+}

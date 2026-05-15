@@ -17,6 +17,7 @@ AUTOMOTIVE_CONFIG = DomainConfig(
     pagination_style="query_param",
     pagination_param="page",
     max_pages=15,
+    requires_js=True,
     fields=[
         FieldSchema("price",      "Price",      ["offers.price", "price", "listPrice"],              [], "float", "$",   required=True, is_primary_sort=True),
         FieldSchema("mileage",    "Mileage",    ["mileageFromOdometer", "mileage", "miles"],          [], "int",   "mi"),
@@ -42,10 +43,10 @@ class CarvanaAdapter(DomainAdapter):
 
     def build_url(self, page: int = 1, **filters) -> str:
         return build_search_url(
-            make=filters["make"],
-            model=filters["model"],
-            min_year=filters["min_year"],
-            max_year=filters["max_year"],
+            make=filters.get("make", ""),
+            model=filters.get("model", ""),
+            min_year=filters.get("min_year", 0),
+            max_year=filters.get("max_year", 9999),
             page=page,
             fuel_type=filters.get("fuel_type"),
         )

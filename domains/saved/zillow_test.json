@@ -1,0 +1,142 @@
+{
+  "domain_id": "zillow_test",
+  "display_name": "Zillow Test",
+  "base_url": "https://www.zillow.com/homes/for_rent/",
+  "pagination_style": "none",
+  "pagination_param": "",
+  "max_pages": 10,
+  "fields": [
+    {
+      "name": "listing_name",
+      "display_name": "Listing Name",
+      "json_paths": [
+        "$.itemListElement[*].item.name"
+      ],
+      "css_selectors": [],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "listing_url",
+      "display_name": "Listing URL",
+      "json_paths": [
+        "$.itemListElement[*].item.url"
+      ],
+      "css_selectors": [],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "address",
+      "display_name": "Address",
+      "json_paths": [
+        "$.itemListElement[*].item.about.address.streetAddress"
+      ],
+      "css_selectors": [],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "city",
+      "display_name": "City",
+      "json_paths": [
+        "$.itemListElement[*].item.about.address.addressLocality"
+      ],
+      "css_selectors": [],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "state",
+      "display_name": "State",
+      "json_paths": [
+        "$.itemListElement[*].item.about.address.addressRegion"
+      ],
+      "css_selectors": [],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "zip_code",
+      "display_name": "Zip Code",
+      "json_paths": [
+        "$.itemListElement[*].item.about.address.postalCode"
+      ],
+      "css_selectors": [],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "price",
+      "display_name": "Price",
+      "json_paths": [
+        "$.itemListElement[*].item.offers[*].lowPrice"
+      ],
+      "css_selectors": [],
+      "data_type": "float",
+      "unit": "$",
+      "required": true,
+      "is_primary_sort": true
+    },
+    {
+      "name": "bedrooms",
+      "display_name": "Bedrooms",
+      "json_paths": [
+        "$.itemListElement[*].item.offers[*].name"
+      ],
+      "css_selectors": [],
+      "data_type": "str",
+      "unit": "",
+      "required": false,
+      "is_primary_sort": false
+    },
+    {
+      "name": "latitude",
+      "display_name": "Latitude",
+      "json_paths": [
+        "$.itemListElement[*].item.about.geo.latitude"
+      ],
+      "css_selectors": [],
+      "data_type": "float",
+      "unit": "",
+      "required": false,
+      "is_primary_sort": false
+    },
+    {
+      "name": "longitude",
+      "display_name": "Longitude",
+      "json_paths": [
+        "$.itemListElement[*].item.about.geo.longitude"
+      ],
+      "css_selectors": [],
+      "data_type": "float",
+      "unit": "",
+      "required": false,
+      "is_primary_sort": false
+    }
+  ],
+  "filter_rules": [],
+  "scoring_weights": {
+    "price": 80,
+    "bedrooms": 10,
+    "listing_name": 5,
+    "address": 5
+  },
+  "system_prompt_context": "You are a real estate analyst extracting rental listing data from Zillow.",
+  "alert_on_new": true,
+  "alert_on_drop_pct": 5.0,
+  "created_at": "2026-05-15T01:16:14.045983+00:00",
+  "user_request": "Find rentals in Chandler, Tempe, Phoenix, Mesa, and Gilbert. Max monthly rent $2,000. Prioritize single family homes and duplex/triplex"
+}

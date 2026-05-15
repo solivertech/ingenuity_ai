@@ -38,7 +38,11 @@ def load_config(domain_id: str) -> DomainConfig:
         raise FileNotFoundError(f"No saved domain config for '{domain_id}' at {path}")
     data = json.loads(path.read_text(encoding="utf-8"))
     fields = [FieldSchema(**f) for f in data.pop("fields", [])]
-    return DomainConfig(fields=fields, **data)
+    # Filter to only known DomainConfig fields (forward-compat: ignore unknown JSON keys)
+    import dataclasses
+    known = {f.name for f in dataclasses.fields(DomainConfig)}
+    filtered = {k: v for k, v in data.items() if k in known}
+    return DomainConfig(fields=fields, **filtered)
 
 
 def list_configs() -> list[DomainConfig]:

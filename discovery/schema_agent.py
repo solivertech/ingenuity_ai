@@ -70,7 +70,7 @@ class SchemaAgent:
             log.error("SchemaAgent: failed to fetch %s", url)
             return None
 
-        page_context = _extract_page_context(html)
+        page_context = _extract_page_context(html, user_request)
         prompt = _build_discovery_prompt(url, user_request, page_context)
 
         result: LLMResult = self.llm.analyze([], _prompt_override=prompt)
@@ -104,6 +104,7 @@ class SchemaAgent:
             failures = spot_check(adapter, config)
             if not failures:
                 log.info("SchemaAgent: validation passed on attempt %d", attempt + 1)
+                config.last_validated_at = datetime.now(timezone.utc).isoformat()
                 return config
             if attempt == max_retries:
                 log.warning(
@@ -138,6 +139,7 @@ class SchemaAgent:
             fields_data = json.loads(text)
             if isinstance(fields_data, list):
                 config.fields = [FieldSchema(**f) for f in fields_data]
+                config.selector_version = getattr(config, "selector_version", 0) + 1
         except (json.JSONDecodeError, TypeError, KeyError):
             log.warning("SchemaAgent: could not parse refined fields response")
         return config
@@ -176,8 +178,10 @@ def _check_robots_txt(url: str) -> None:
     except Exception as exc:
         log.debug("robots.txt check skipped for %s: %s", url, exc)
 
-def _extract_page_context(html: str) -> str:
+def _extract_page_context(html: str, user_request: str = "") -> str:
     """Pull structured JSON and a short HTML sample from raw page HTML."""
+    from scraping.discovery.bm25_filter import filter_by_relevance
+
     parts = []
 
     ld_blocks = re.findall(
@@ -204,9 +208,13 @@ def _extract_page_context(html: str) -> str:
     try:
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(html, "html.parser")
-        body_text = soup.get_text(separator=" ", strip=True)[:3000]
+        body_text = soup.get_text(separator=" ", strip=True)
     except Exception:
-        body_text = html[:3000]
+        body_text = html
+
+    if user_request:
+        body_text = filter_by_relevance(body_text, user_request, top_n=10)
+    body_text = body_text[:3000]
     parts.append("=== Page text sample ===\n" + body_text)
 
     return "\n\n".join(parts)[:15000]
