@@ -1,39 +1,165 @@
 """
-In-process async scheduler for IngenuityAI.
+Multi-schedule async scheduler for IngenuityAI.
 
-Runs a background asyncio task that polls every 15 s and fires a full
-search+email job when the configured interval has elapsed.  State is held in
-module-level variables (reset on process restart); persistent config
-(enabled, interval, schedule_time, profile_ids) lives in dashboard_settings.json.
+Each schedule entry stored in dashboard_settings.json under "schedules" drives
+its own independent asyncio task. State (next_run_at, last_run_at, etc.) is
+held in-memory per schedule; persistent config lives in the settings file.
 
 Lifecycle is managed by the FastAPI lifespan handler in app.py:
-    startup()  → reads persisted config, starts loop if enabled
-    shutdown() → cancels the loop task cleanly
+    startup()  → reads persisted entries, starts tasks for enabled ones
+    shutdown() → cancels all loop tasks cleanly
 """
 
 import asyncio
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 
 log = logging.getLogger(__name__)
 
-# ── Module-level state (in-memory only) ───────────────────────────────────────
-_task: "asyncio.Task | None" = None
-_next_run_at: "datetime | None" = None
-_last_run_at: "str | None" = None   # ISO-8601, populated from DB on startup
-_last_job_id: "str | None" = None
-_last_status: "str | None" = None   # "complete" | "failed" | "cancelled"
+
+@dataclass
+class _ScheduleState:
+    task: "asyncio.Task | None" = None
+    next_run_at: "datetime | None" = None
+    last_run_at: "str | None" = None
+    last_job_id: "str | None" = None
+    last_status: "str | None" = None
+
+
+# schedule_id → runtime state
+_states: dict[str, _ScheduleState] = {}
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def get_status() -> dict:
-    """Return current scheduler state as a plain dict (safe to serialise to JSON)."""
+def get_all_statuses() -> list[dict]:
+    return [_entry_status(e) for e in _load_entries()]
+
+
+def get_status(schedule_id: str) -> "dict | None":
+    entry = _find_entry(schedule_id)
+    return _entry_status(entry) if entry else None
+
+
+async def startup() -> None:
+    try:
+        from storage import history_db
+        history_db.init_db()
+    except Exception as exc:
+        log.warning("Scheduler: could not init DB: %s", exc)
+
+    for entry in _load_entries():
+        sid = entry["id"]
+        _states.setdefault(sid, _ScheduleState())
+        if entry.get("enabled"):
+            _schedule_next(sid)
+            _spawn_task(sid)
+            log.info(
+                "Scheduler[%s]: started (interval=%dh, time=%r, next=%s)",
+                sid,
+                entry.get("interval_hours", 24),
+                entry.get("schedule_time", ""),
+                _states[sid].next_run_at.isoformat() if _states[sid].next_run_at else "?",
+            )
+
+
+async def shutdown() -> None:
+    for sid, state in list(_states.items()):
+        if state.task and not state.task.done():
+            state.task.cancel()
+            try:
+                await state.task
+            except asyncio.CancelledError:
+                pass
+            state.task = None
+
+
+async def apply_entry(entry: dict) -> dict:
+    """Create or update a schedule entry. Returns the full status dict."""
+    sid = entry["id"]
+    entries = _load_entries()
+    idx = next((i for i, e in enumerate(entries) if e["id"] == sid), None)
+    if idx is not None:
+        entries[idx] = entry
+    else:
+        entries.append(entry)
+    _save_entries(entries)
+
+    _states.setdefault(sid, _ScheduleState())
+    state = _states[sid]
+    if state.task and not state.task.done():
+        state.task.cancel()
+        try:
+            await state.task
+        except asyncio.CancelledError:
+            pass
+        state.task = None
+
+    if entry.get("enabled"):
+        _schedule_next(sid)
+        _spawn_task(sid)
+
+    return _entry_status(entry)
+
+
+async def delete_entry(schedule_id: str) -> bool:
+    entries = _load_entries()
+    new_entries = [e for e in entries if e["id"] != schedule_id]
+    if len(new_entries) == len(entries):
+        return False
+    _save_entries(new_entries)
+
+    state = _states.pop(schedule_id, None)
+    if state and state.task and not state.task.done():
+        state.task.cancel()
+        try:
+            await state.task
+        except asyncio.CancelledError:
+            pass
+    return True
+
+
+async def run_now(schedule_id: str) -> str:
+    """Fire an immediate run for a schedule. Returns job_id."""
+    from dashboard.backend.job_manager import create_job, RunOptions
+
+    entry = _find_entry(schedule_id)
+    profile_ids = list(entry.get("profile_ids", [])) if entry else []
+    options = RunOptions(
+        profile_ids=profile_ids,
+        dry_run=False, no_llm=False, backend=None,
+        force_email=False, no_email=False, debug=False,
+    )
+    job = create_job(profile_ids, options)
+    asyncio.ensure_future(_launch_and_track(schedule_id, job.job_id))
+    return job.job_id
+
+
+# ── Internal helpers ──────────────────────────────────────────────────────────
+
+def _load_entries() -> list[dict]:
+    from dashboard.backend import settings_store
+    return list(settings_store.get("schedules") or [])
+
+
+def _save_entries(entries: list[dict]) -> None:
+    from dashboard.backend import settings_store
+    settings_store.save({"schedules": entries})
+
+
+def _find_entry(schedule_id: str) -> "dict | None":
+    return next((e for e in _load_entries() if e["id"] == schedule_id), None)
+
+
+def _entry_status(entry: dict) -> dict:
     from dashboard.backend.job_manager import get_job
+    sid = entry["id"]
+    state = _states.get(sid, _ScheduleState())
 
     running_job = None
-    if _last_job_id:
-        job = get_job(_last_job_id)
+    if state.last_job_id:
+        job = get_job(state.last_job_id)
         if job and job.status in ("pending", "running"):
             running_job = {
                 "job_id":     job.job_id,
@@ -42,184 +168,45 @@ def get_status() -> dict:
             }
 
     return {
-        "enabled":        _is_enabled(),
-        "interval_hours": _get_interval(),
-        "schedule_time":  _get_schedule_time(),
-        "profile_ids":    _get_profile_ids(),
-        "next_run_at":    _next_run_at.isoformat() if _next_run_at else None,
-        "last_run_at":    _last_run_at,
-        "last_job_id":    _last_job_id,
-        "last_status":    _last_status,
-        "running_job":    running_job,
-        "task_alive":     _task is not None and not _task.done(),
+        **entry,
+        "next_run_at": state.next_run_at.isoformat() if state.next_run_at else None,
+        "last_run_at": state.last_run_at,
+        "last_job_id": state.last_job_id,
+        "last_status": state.last_status,
+        "running_job": running_job,
+        "task_alive":  state.task is not None and not state.task.done(),
     }
 
 
-async def startup() -> None:
-    """
-    Called by the FastAPI lifespan on backend start.
-    Reads last-run time from the DB so the next-run calculation is accurate
-    after a restart, then starts the loop if the schedule is enabled.
-    """
-    global _last_run_at
-
-    try:
-        from storage import history_db
-        history_db.init_db()
-        runs = history_db.get_history_summary()
-        if runs:
-            _last_run_at = runs[0]["run_at"]
-    except Exception as exc:
-        log.warning("Scheduler: could not read run history from DB: %s", exc)
-
-    if _is_enabled():
-        _schedule_next()
-        _spawn_task()
-        log.info(
-            "Scheduler: auto-started (interval=%dh, time=%r, next=%s)",
-            _get_interval(),
-            _get_schedule_time(),
-            _next_run_at.isoformat() if _next_run_at else "?",
-        )
-    else:
-        log.debug("Scheduler: disabled — not starting loop")
-
-
-async def shutdown() -> None:
-    """Cancel the background loop and wait for it to exit cleanly."""
-    global _task
-    if _task and not _task.done():
-        _task.cancel()
-        try:
-            await _task
-        except asyncio.CancelledError:
-            pass
-    _task = None
-
-
-async def apply_settings(
-    enabled: bool,
-    interval_hours: int,
-    profile_ids: list[str],
-    schedule_time: str = "",
-) -> None:
-    """
-    Persist new schedule settings then restart the loop so changes take effect
-    immediately without a backend restart.
-    """
-    from dashboard.backend import settings_store
-
-    settings_store.save({
-        "schedule_enabled":        enabled,
-        "schedule_interval_hours": interval_hours,
-        "schedule_profile_ids":    profile_ids,
-        "schedule_time":           schedule_time,
-    })
-
-    await shutdown()
-
-    if enabled:
-        _schedule_next()
-        _spawn_task()
-        log.info(
-            "Scheduler: (re)started — interval=%dh time=%r profiles=%s next=%s",
-            interval_hours,
-            schedule_time,
-            profile_ids if profile_ids else "all",
-            _next_run_at.isoformat() if _next_run_at else "?",
-        )
-    else:
-        log.info("Scheduler: disabled")
-
-
-async def run_now() -> str:
-    """
-    Fire an immediate run using the scheduled profile_ids.
-    Returns the job_id immediately; the job runs in the background.
-    Updates _last_run_at and recalculates _next_run_at when the job finishes.
-    """
-    from dashboard.backend.job_manager import create_job, RunOptions
-
-    profile_ids = _get_profile_ids()
-    options = RunOptions(
-        profile_ids=profile_ids,
-        dry_run=False,
-        no_llm=False,
-        backend=None,
-        force_email=False,
-        no_email=False,
-        debug=False,
-    )
-    job = create_job(profile_ids, options)
-    asyncio.ensure_future(_launch_and_track(job.job_id))
-    return job.job_id
-
-
-# ── Internal helpers ──────────────────────────────────────────────────────────
-
-def _is_enabled() -> bool:
-    from dashboard.backend import settings_store
-    return bool(settings_store.get("schedule_enabled"))
-
-
-def _get_interval() -> int:
-    from dashboard.backend import settings_store
-    return int(settings_store.get("schedule_interval_hours") or 24)
-
-
-def _get_schedule_time() -> str:
-    from dashboard.backend import settings_store
-    return str(settings_store.get("schedule_time") or "")
-
-
-def _get_profile_ids() -> list[str]:
-    from dashboard.backend import settings_store
-    return list(settings_store.get("schedule_profile_ids") or [])
-
-
-def _schedule_next() -> None:
-    """
-    Compute and store the next fire time.
-
-    If schedule_time is set ("HH:MM"), the next wall-clock occurrence of that
-    local time is used, stepping by interval_hours (or 1 day for 24 h).
-
-    Otherwise falls back to interval-from-last-run logic.  Missed intervals
-    are detected and fire on the next poll (~15 s) rather than waiting another
-    full cycle.  A 30-second minimum delay prevents an instant re-fire on
-    settings changes.
-    """
-    global _next_run_at
-    now           = datetime.now(timezone.utc)
-    min_delay     = timedelta(seconds=30)
-    schedule_time = _get_schedule_time()
-    interval_h    = _get_interval()
+def _schedule_next(schedule_id: str) -> None:
+    entry = _find_entry(schedule_id)
+    if not entry:
+        return
+    state = _states.setdefault(schedule_id, _ScheduleState())
+    now = datetime.now(timezone.utc)
+    min_delay = timedelta(seconds=30)
+    schedule_time = entry.get("schedule_time", "")
+    interval_h = int(entry.get("interval_hours", 24))
 
     if schedule_time:
-        _next_run_at = _next_time_of_day(schedule_time, interval_h, now, min_delay)
+        state.next_run_at = _next_time_of_day(schedule_time, interval_h, now, min_delay)
         return
 
     interval = timedelta(hours=interval_h)
-
-    if _last_run_at:
+    if state.last_run_at:
         try:
-            last      = datetime.fromisoformat(_last_run_at.replace("Z", "+00:00"))
+            last = datetime.fromisoformat(state.last_run_at.replace("Z", "+00:00"))
             candidate = last + interval
-            missed    = False
+            missed = False
             while candidate <= now:
                 candidate += interval
                 missed = True
-            if missed:
-                # Fire on the next poll rather than waiting a full interval.
-                _next_run_at = now + timedelta(seconds=5)
-            else:
-                _next_run_at = max(candidate, now + min_delay)
+            state.next_run_at = now + timedelta(seconds=5) if missed else max(candidate, now + min_delay)
             return
         except Exception:
             pass
 
-    # No history or parse error — wait one full interval from now.
-    _next_run_at = now + interval
+    state.next_run_at = now + interval
 
 
 def _next_time_of_day(
@@ -228,21 +215,18 @@ def _next_time_of_day(
     now: datetime,
     min_delay: timedelta,
 ) -> datetime:
-    """Return the next UTC datetime when the local clock shows HH:MM."""
     try:
         h, m = (int(x) for x in schedule_time.split(":"))
     except Exception:
         return now + timedelta(hours=interval_hours)
 
-    local_now = datetime.now()  # naive local time
+    local_now = datetime.now()
     candidate = local_now.replace(hour=h, minute=m, second=0, microsecond=0)
-
     step = (
         timedelta(days=interval_hours // 24)
         if interval_hours % 24 == 0
         else timedelta(hours=interval_hours)
     )
-
     while candidate <= local_now:
         candidate += step
 
@@ -254,87 +238,92 @@ def _next_time_of_day(
     return max(candidate_utc, now + min_delay)
 
 
-def _spawn_task() -> None:
-    global _task
-    _task = asyncio.ensure_future(_run_loop())
+def _spawn_task(schedule_id: str) -> None:
+    state = _states.setdefault(schedule_id, _ScheduleState())
+    state.task = asyncio.ensure_future(_run_loop(schedule_id))
 
 
-async def _run_loop() -> None:
-    """Poll every 15 s; fire a job when next_run_at is reached."""
-    global _next_run_at, _last_run_at, _last_job_id, _last_status
+async def _run_loop(schedule_id: str) -> None:
+    state = _states.get(schedule_id)
+    if not state:
+        return
 
     log.info(
-        "Scheduler loop started — next run at %s",
-        _next_run_at.isoformat() if _next_run_at else "?",
+        "Scheduler[%s]: loop started — next=%s",
+        schedule_id,
+        state.next_run_at.isoformat() if state.next_run_at else "?",
     )
 
     try:
         while True:
             await asyncio.sleep(15)
 
-            if not _is_enabled():
-                log.info("Scheduler: disabled — loop exiting")
+            entry = _find_entry(schedule_id)
+            if not entry or not entry.get("enabled"):
+                log.info("Scheduler[%s]: disabled — loop exiting", schedule_id)
                 break
 
-            if _next_run_at and datetime.now(timezone.utc) >= _next_run_at:
-                log.info("Scheduler: firing scheduled run")
+            if state.next_run_at and datetime.now(timezone.utc) >= state.next_run_at:
+                log.info("Scheduler[%s]: firing scheduled run", schedule_id)
                 try:
-                    job_id, status = await _fire_and_wait()
-                    _last_job_id = job_id
-                    _last_run_at = datetime.now(timezone.utc).isoformat()
-                    _last_status = status
-                    log.info("Scheduler: job %s finished — %s", job_id, status)
+                    job_id, status = await _fire_and_wait(schedule_id)
+                    state.last_job_id = job_id
+                    state.last_run_at = datetime.now(timezone.utc).isoformat()
+                    state.last_status = status
+                    log.info("Scheduler[%s]: job %s finished — %s", schedule_id, job_id, status)
                 except Exception as exc:
-                    log.error("Scheduler: job raised an exception: %s", exc)
-                    _last_status = "error"
+                    log.error("Scheduler[%s]: job raised: %s", schedule_id, exc)
+                    state.last_status = "error"
 
-                _schedule_next()
-                log.info("Scheduler: next run at %s", _next_run_at.isoformat() if _next_run_at else "?")
+                _schedule_next(schedule_id)
+                log.info(
+                    "Scheduler[%s]: next run at %s",
+                    schedule_id,
+                    state.next_run_at.isoformat() if state.next_run_at else "?",
+                )
 
     except asyncio.CancelledError:
-        log.info("Scheduler loop cancelled")
+        log.info("Scheduler[%s]: loop cancelled", schedule_id)
         raise
 
 
-async def _fire_and_wait() -> tuple[str, str]:
-    """Spawn main.py as a subprocess job and block until it exits."""
+async def _fire_and_wait(schedule_id: str) -> tuple[str, str]:
     from dashboard.backend.job_manager import create_job, launch_job, get_job, RunOptions
 
-    profile_ids = _get_profile_ids()
-    options     = RunOptions(
+    entry = _find_entry(schedule_id)
+    profile_ids = list(entry.get("profile_ids", [])) if entry else []
+    options = RunOptions(
         profile_ids=profile_ids,
-        dry_run=False,
-        no_llm=False,
-        backend=None,
-        force_email=False,
-        no_email=False,
-        debug=False,
+        dry_run=False, no_llm=False, backend=None,
+        force_email=False, no_email=False, debug=False,
     )
     job = create_job(profile_ids, options)
-    await launch_job(job.job_id)    # blocks until subprocess exits
+    await launch_job(job.job_id)
     finished = get_job(job.job_id)
     return job.job_id, (finished.status if finished else "unknown")
 
 
-async def _launch_and_track(job_id: str) -> None:
-    """Launch a run-now job and update scheduler state when it finishes."""
-    global _last_run_at, _last_job_id, _last_status
+async def _launch_and_track(schedule_id: str, job_id: str) -> None:
     from dashboard.backend.job_manager import launch_job, get_job
 
-    _last_job_id = job_id
+    state = _states.get(schedule_id)
+    if state:
+        state.last_job_id = job_id
     try:
         await launch_job(job_id)
     except Exception as exc:
-        log.error("Scheduler: run-now job %s raised: %s", job_id, exc)
+        log.error("Scheduler[%s]: run-now job %s raised: %s", schedule_id, job_id, exc)
 
     job = get_job(job_id)
-    _last_run_at = datetime.now(timezone.utc).isoformat()
-    _last_status = job.status if job else "unknown"
-    log.info("Scheduler: run-now job %s finished — %s", job_id, _last_status)
+    if state:
+        state.last_run_at = datetime.now(timezone.utc).isoformat()
+        state.last_status = job.status if job else "unknown"
 
-    if _is_enabled():
-        _schedule_next()
+    entry = _find_entry(schedule_id)
+    if entry and entry.get("enabled"):
+        _schedule_next(schedule_id)
         log.info(
-            "Scheduler: next run rescheduled to %s",
-            _next_run_at.isoformat() if _next_run_at else "?",
+            "Scheduler[%s]: next run rescheduled to %s",
+            schedule_id,
+            _states[schedule_id].next_run_at.isoformat() if _states.get(schedule_id, _ScheduleState()).next_run_at else "?",
         )

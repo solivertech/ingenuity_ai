@@ -221,21 +221,25 @@ class DocContent(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    make: str
-    model: str
-    year_start: int
-    year_end: int
-    notes: str = ""
+    topic:     str
+    description: str            = ""
+    domain_id: str | None       = None
+    extra:     dict             = {}
 
 
 # Register /docs/generate BEFORE /docs/{filename} so the literal path wins.
 @router.post("/docs/generate")
 @limiter.limit("20/hour")
 async def generate_doc(request: Request, body: GenerateRequest, _: dict = Depends(get_current_user)):
-    """Use Cerebras to generate a vehicle reference markdown document."""
-    from dashboard.backend.doc_generator import generate_vehicle_doc
+    """Use AI to generate a reference markdown document."""
+    from dashboard.backend.doc_generator import generate_doc
     try:
-        content = generate_vehicle_doc(body.make.strip(), body.model.strip(), body.year_start, body.year_end, body.notes)
+        content = generate_doc(
+            topic=body.topic.strip(),
+            description=body.description,
+            domain_id=body.domain_id,
+            extra=body.extra,
+        )
         return {"content": content}
     except ValueError as exc:
         raise HTTPException(503, str(exc))

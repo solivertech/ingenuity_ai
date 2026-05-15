@@ -22,10 +22,7 @@ _DEFAULTS: dict = {
     "interest_rate": 7.5,
     "loan_term_months": 60,
     "check_interval_hours": 24,
-    "schedule_enabled": False,
-    "schedule_interval_hours": 24,
-    "schedule_time": "",           # "HH:MM" local time — empty = interval-only
-    "schedule_profile_ids": [],
+    "schedules": [],               # list of {id, label, enabled, interval_hours, schedule_time, profile_ids}
     "max_pages_per_search": 5,
     "send_email": True,
     "headless": True,
@@ -54,10 +51,11 @@ _DEFAULTS: dict = {
     # "cerebras_model": "zai-glm-4.7",  # 355B — switch back when free-tier access restored
     "cerebras_model": "qwen-3-235b-a22b-instruct-2507",
     "cerebras_max_tokens": 1500,
-    "output_dir": "./carvana_results",
-    "vehicle_reference_dir": "./vehicle_reference",
-    "db_path": "./carvana_results/history.db",
-    "log_file": "./carvana_results/tracker.log",
+    "proxy_list": [],                    # ["http://user:pass@host:port", ...]
+    "output_dir": "./search_results",
+    "vehicle_reference_dir": "./reference_data",
+    "db_path": "./search_results/history.db",
+    "log_file": "./search_results/tracker.log",
 }
 
 

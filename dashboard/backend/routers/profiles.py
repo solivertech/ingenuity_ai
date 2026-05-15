@@ -27,14 +27,12 @@ class ProfileModel(BaseModel):
     profile_id:             str
     label:                  str
     email_to:               list[str]
-    # Automotive fields — optional for non-carvana_suvs domains
+    domain_id:              str
     vehicles:               list[list[str]] = Field(default_factory=list)   # [[make, model], ...]
     max_price:              int | None = None
     max_mileage:            int = 0
     min_year:               int = 0
     max_year:               int = 9999
-    # Domain fields
-    domain_id:              str = "carvana_suvs"
     filter_rules:           list[dict] = Field(default_factory=list)
     # Existing optional fields
     fuel_type_filters:      list[str | None] = Field(default_factory=lambda: [None])
@@ -54,14 +52,13 @@ class ProfileModel(BaseModel):
             raise ValueError("label must not be empty")
         if not self.email_to:
             raise ValueError("email_to must contain at least one address")
-        if self.domain_id == "carvana_suvs":
-            if not self.vehicles:
-                raise ValueError("vehicles must contain at least one entry for carvana_suvs profiles")
-            for v in self.vehicles:
-                if len(v) != 2 or not all(isinstance(x, str) and x.strip() for x in v):
-                    raise ValueError("each vehicle must be [make, model] with non-empty strings")
-            if self.min_year > self.max_year:
-                raise ValueError("min_year must be <= max_year")
+        if not self.domain_id.strip():
+            raise ValueError("domain_id must not be empty")
+        for v in self.vehicles:
+            if len(v) != 2 or not all(isinstance(x, str) and x.strip() for x in v):
+                raise ValueError("each vehicle must be [make, model] with non-empty strings")
+        if self.min_year and self.max_year and self.min_year > self.max_year:
+            raise ValueError("min_year must be <= max_year")
         return self
 
 
@@ -138,7 +135,7 @@ def _profile_to_model(raw: dict) -> dict:
         "show_financing":         raw.get("show_financing", True),
         "down_payment":           raw.get("down_payment"),
         "email_only_on_new_or_drops": raw.get("email_only_on_new_or_drops", False),
-        "domain_id":   raw.get("domain_id", "carvana_suvs"),
+        "domain_id":   raw.get("domain_id", ""),
         "filter_rules": raw.get("filter_rules") or [],
     }
 

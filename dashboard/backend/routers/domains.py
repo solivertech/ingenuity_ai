@@ -141,6 +141,17 @@ def list_domains():
     return {"domains": [asdict(c) for c in configs]}
 
 
+@router.get("/{domain_id}")
+def get_domain(domain_id: str):
+    """Return a single saved domain config by ID."""
+    from discovery.domain_config import load_config
+    try:
+        cfg = load_config(domain_id)
+        return asdict(cfg)
+    except FileNotFoundError:
+        raise HTTPException(404, f"Domain '{domain_id}' not found")
+
+
 @router.put("/{domain_id}")
 def update_domain(domain_id: str, req: PatchDomainRequest):
     """Patch display name, fields, scoring weights, or system prompt context."""
@@ -168,6 +179,28 @@ def update_domain(domain_id: str, req: PatchDomainRequest):
     updated = dataclasses.replace(cfg, **kwargs)
     save_config(updated)
     return asdict(updated)
+
+
+@router.post("/{domain_id}/validate")
+def validate_domain(domain_id: str):
+    """
+    Re-run SchemaAgent.validate_and_refine() for an existing domain config.
+    Returns the (possibly refined) config and saves it.
+    """
+    from discovery.domain_config import load_config, save_config
+    try:
+        cfg = load_config(domain_id)
+    except FileNotFoundError:
+        raise HTTPException(404, f"Domain '{domain_id}' not found")
+
+    from analysis.llm import LLMAnalyzer
+    from discovery.schema_agent import SchemaAgent
+
+    llm = LLMAnalyzer()
+    agent = SchemaAgent(llm)
+    refined = agent.validate_and_refine(cfg)
+    save_config(refined)
+    return asdict(refined)
 
 
 @router.delete("/{domain_id}")
