@@ -25,5 +25,21 @@ Pillow>=10.0
 # One-time Gmail OAuth setup (setup_gmail_oauth.py only — not needed for normal runs)
 google-auth-oauthlib>=1.0.0
 
+# Scraping engine (SCRAPING_ENGINE_PLAN.md)
+httpx[http2]>=0.27.0         # Tier 1: async HTTP/2 client
+curl_cffi>=0.7.0             # Tier 2: TLS fingerprint impersonation
+selectolax>=0.3.21           # Fast HTML parser (replaces BeautifulSoup in hot path)
+markdownify>=0.13.0          # HTML → Markdown for LLM consumption
+rank_bm25>=0.2.2             # BM25 content filtering for schema discovery
+jsonpath-ng>=1.6.0           # JSONPath evaluation for domain config field extraction
+
+# Alert channels
+twilio>=8.0.0                # SMS alerts (optional — set TWILIO_* vars in .env to activate)
+
+# Tier 4 stealth browser
+# After pip install, run once to download the patched Firefox binary:
+#   python -m camoufox fetch
+camoufox>=0.4.0              # Firefox-based stealth (Tier 4); used when browser_engine="camoufox"
+
 # After pip install, run once to download the Chromium browser binary:
 #   playwright install chromium

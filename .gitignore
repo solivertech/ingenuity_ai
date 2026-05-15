@@ -2,7 +2,7 @@
 users.json
 dashboard_settings.json
 auth_secret.key
-carvana_results/
+search_results/
 __pycache__/
 *.pyc
 *.pyo
@@ -22,3 +22,6 @@ dashboard/PLAN.md
 users.json
 AI_SCRAPER_PLAN.md
 CLAUDE.md
+SCRAPING_ENGINE_PLAN.md
+carvana_results/
+scrape_queue.db
