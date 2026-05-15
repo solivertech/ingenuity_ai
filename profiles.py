@@ -15,9 +15,7 @@ import config
 
 log = logging.getLogger(__name__)
 
-_REQUIRED_FIELDS = {"profile_id", "label", "email_to"}
-# These fields are additionally required for automotive (carvana_suvs) profiles.
-_AUTOMOTIVE_REQUIRED_FIELDS = {"vehicles", "max_mileage", "min_year", "max_year"}
+_REQUIRED_FIELDS = {"profile_id", "label", "email_to", "domain_id"}
 
 
 @dataclass
@@ -25,24 +23,30 @@ class SearchProfile:
     profile_id:         str
     label:              str
     email_to:           list[str]
-    # Automotive-specific — optional for generic domains; defaults allow generic profiles to omit them
+    domain_id:          str = ""
+    # Generic search targets — each dict is passed as **kwargs to adapter.build_url().
+    # For automotive profiles this is auto-populated from `vehicles`.
+    # For generic domains: [{}] = one run with no extra params (use base_url as-is).
+    search_targets:     list[dict] = field(default_factory=list)
+    # Generic filter rules (evaluated by FilterEngine on non-automotive domains)
+    filter_rules:       list[dict] = field(default_factory=list)
+    # Automotive-specific fields — optional for generic domains
     vehicles:           list[tuple[str, str]] = field(default_factory=list)  # [(make, model), ...]
-    max_price:          Optional[int] = None    # None = no upper price limit
+    max_price:          Optional[int] = None
     max_mileage:        int = 0
     min_year:           int = 0
     max_year:           int = 9999
-    # Domain fields — domain_id defaults to carvana_suvs for backward compatibility
-    domain_id:          str = "carvana_suvs"
-    filter_rules:       list[dict] = field(default_factory=list)  # generic filter rules for non-automotive domains
-    # Remaining optional fields
     fuel_type_filters:        list[str | None] = field(default_factory=lambda: [None])
-    model_preference:         list[str] = field(default_factory=list)  # ordered best→worst; [] = no preference
+    model_preference:         list[str] = field(default_factory=list)
     reference_doc_path:       Optional[str] = None
-    excluded_trim_keywords:   list[str] = field(default_factory=list)  # case-insensitive substrings to drop
-    excluded_years:           list[int] = field(default_factory=list)  # specific years to skip within min/max range
-    show_financing:           bool = True          # include Est. Payment column in email table
-    down_payment:             Optional[int] = None  # override config.DOWN_PAYMENT for this profile
-    email_only_on_new_or_drops: bool = False       # only send email when new vehicles or price drops exist
+    excluded_trim_keywords:   list[str] = field(default_factory=list)
+    excluded_years:           list[int] = field(default_factory=list)
+    show_financing:           bool = True
+    down_payment:             Optional[int] = None
+    email_only_on_new_or_drops: bool = False
+    # Alert channels — configure to enable additional notification methods
+    webhook_url:              Optional[str] = None         # HTTP POST on alert
+    sms_to:                   list[str] = field(default_factory=list)  # Twilio recipients
 
 
 def load_profiles(path: str) -> list[SearchProfile]:
@@ -68,11 +72,8 @@ def load_profiles(path: str) -> list[SearchProfile]:
     seen_ids: set[str] = set()
 
     for i, raw in enumerate(raw_profiles):
-        domain_id = raw.get("domain_id", "carvana_suvs")
-        effective_required = _REQUIRED_FIELDS | (
-            _AUTOMOTIVE_REQUIRED_FIELDS if domain_id == "carvana_suvs" else set()
-        )
-        missing = effective_required - set(raw.keys())
+        domain_id = raw.get("domain_id", "")
+        missing = _REQUIRED_FIELDS - set(raw.keys())
         if missing:
             raise ValueError(f"Profile #{i + 1} is missing required fields: {missing}")
 
@@ -83,9 +84,7 @@ def load_profiles(path: str) -> list[SearchProfile]:
             raise ValueError(f"Duplicate profile_id: '{pid}'")
         seen_ids.add(pid)
 
-        vehicles_raw = raw["vehicles"]
-        if not isinstance(vehicles_raw, list) or not vehicles_raw:
-            raise ValueError(f"Profile '{pid}': vehicles must be a non-empty list")
+        vehicles_raw = raw.get("vehicles") or []
         vehicles: list[tuple[str, str]] = []
         for v in vehicles_raw:
             if not isinstance(v, (list, tuple)) or len(v) != 2:
@@ -93,6 +92,24 @@ def load_profiles(path: str) -> list[SearchProfile]:
                     f"Profile '{pid}': each vehicle must be [make, model], got: {v}"
                 )
             vehicles.append((str(v[0]), str(v[1])))
+
+        # Build search_targets: explicit YAML value takes precedence; automotive
+        # profiles auto-populate from vehicles if search_targets is absent.
+        # Resolve year range now so it can be embedded into search_targets for adapters that need it
+        _min_year = int(raw["min_year"]) if raw.get("min_year") is not None else 0
+        _max_year = int(raw["max_year"]) if raw.get("max_year") is not None else 9999
+
+        search_targets_raw = raw.get("search_targets") or []
+        named_vehicles = [(make, model) for make, model in vehicles if make or model]
+        if search_targets_raw:
+            search_targets = [dict(t) for t in search_targets_raw if isinstance(t, dict)]
+        elif named_vehicles:
+            search_targets = [
+                {"make": make, "model": model, "min_year": _min_year, "max_year": _max_year}
+                for make, model in named_vehicles
+            ]
+        else:
+            search_targets = [{}]  # one run using the domain's base_url as-is
 
         email_to_raw = raw["email_to"]
         if isinstance(email_to_raw, str):
@@ -130,13 +147,14 @@ def load_profiles(path: str) -> list[SearchProfile]:
             profile_id=pid,
             label=str(raw["label"]),
             email_to=email_to,
+            domain_id=str(domain_id),
+            search_targets=search_targets,
+            filter_rules=filter_rules,
             vehicles=vehicles,
             max_price=int(raw["max_price"]) if raw.get("max_price") is not None else None,
             max_mileage=int(raw["max_mileage"]) if raw.get("max_mileage") is not None else 0,
             min_year=int(raw["min_year"]) if raw.get("min_year") is not None else 0,
             max_year=int(raw["max_year"]) if raw.get("max_year") is not None else 9999,
-            domain_id=str(domain_id),
-            filter_rules=filter_rules,
             fuel_type_filters=fuel_type_filters,
             model_preference=model_preference,
             reference_doc_path=raw.get("reference_doc_path"),
@@ -180,9 +198,10 @@ def _find_vehicle_doc(make: str, model: str, ref_dir: Path) -> Path | None:
 
 def _auto_discover_reference_docs(profile: "SearchProfile") -> str:
     """
-    Look in VEHICLE_REFERENCE_DIR for a matching .md file for each vehicle
-    in the profile. Returns the concatenated content of all matched docs
-    (separated by headers), or "" if none are found.
+    Look in VEHICLE_REFERENCE_DIR for a matching .md file for each vehicle pair
+    in profile.vehicles. Returns concatenated content of all matched docs, or "".
+    Only relevant for automotive profiles; returns "" for non-automotive profiles
+    (profile.vehicles is empty).
     """
     ref_dir = Path(config.VEHICLE_REFERENCE_DIR)
     if not ref_dir.is_dir():
@@ -214,7 +233,7 @@ def resolve_reference_doc(profile: "SearchProfile") -> str:
 
     Fallback chain:
       1. profile.reference_doc_path — if set and file exists, use it
-      2. Auto-discover per-vehicle docs from VEHICLE_REFERENCE_DIR
+      2. Auto-discover per-search-target docs from VEHICLE_REFERENCE_DIR
       3. config.REFERENCE_DOC_PATH  — global fallback, if file exists
       4. ""                         — no reference data; LLM prompt will note this
     """
@@ -233,7 +252,7 @@ def resolve_reference_doc(profile: "SearchProfile") -> str:
             log.warning("[%s] Reference doc not found at '%s' — falling back to auto-discovery",
                         profile.profile_id, p)
 
-    # Step 2: auto-discover per-vehicle docs from vehicle_reference/
+    # Step 2: auto-discover per-vehicle docs from VEHICLE_REFERENCE_DIR
     discovered = _auto_discover_reference_docs(profile)
     if discovered:
         return discovered

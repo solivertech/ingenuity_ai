@@ -47,19 +47,22 @@ _CLIENT_HINT_HEADERS = {
 
 
 class Browser:
-    def __init__(self):
+    def __init__(self, proxy: str | None = None):
         self._playwright: Any = None
         self._browser:    Any = None
         self._context:    Any = None
         self._page:       Any = None
+        # Explicit proxy overrides config.PROXY_URL when provided.
+        self._proxy: str | None = proxy
 
     def start(self) -> None:
         from playwright.sync_api import sync_playwright
 
         self._playwright = sync_playwright().start()
         launch_kwargs: dict[str, Any] = {"headless": config.HEADLESS}
-        if config.PROXY_URL:
-            launch_kwargs["proxy"] = {"server": config.PROXY_URL}
+        effective_proxy = self._proxy or getattr(config, "PROXY_URL", "")
+        if effective_proxy:
+            launch_kwargs["proxy"] = {"server": effective_proxy}
 
         self._browser = self._playwright.chromium.launch(**launch_kwargs)
         self._new_context()

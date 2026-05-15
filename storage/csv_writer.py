@@ -47,7 +47,7 @@ def write_results(
         domain_id = domain_config.domain_id
         columns   = _columns_for_domain(domain_config)
     else:
-        domain_id = "carvana"
+        domain_id = "unknown"
         columns   = _AUTOMOTIVE_COLUMNS
 
     timestamp        = datetime.now().strftime("%Y%m%d_%H%M%S")

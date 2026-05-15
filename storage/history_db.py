@@ -188,7 +188,7 @@ def _migrate_listings_profile_id(conn: sqlite3.Connection) -> None:
 
 # ── Write operations ──────────────────────────────────────────────────────────
 
-def save_run(run: RunRecord, domain_id: str = "carvana_suvs") -> None:
+def save_run(run: RunRecord, domain_id: str = "") -> None:
     with _connect() as conn:
         conn.execute(
             """INSERT OR REPLACE INTO runs
@@ -207,7 +207,7 @@ def save_listings(
     listings: list[dict],
     run_id: str,
     profile_id: str = "default",
-    domain_id: str = "carvana_suvs",
+    domain_id: str = "",
     domain_config=None,
 ) -> None:
     """
@@ -556,6 +556,39 @@ def get_listings_for_run(run_id: str, profile_id: str) -> list[dict]:
             (run_id, profile_id),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def get_last_items_for_profile(profile_id: str) -> list[dict]:
+    """
+    Return deserialized listing_blob dicts from the most recent run for a profile.
+    Used by ChangeDetector to compare current scrape against previous results.
+    Falls back to structured columns when no blob is available.
+    """
+    run_id = get_last_run_id_for_profile(profile_id)
+    if not run_id:
+        return []
+    with _connect() as conn:
+        rows = conn.execute(
+            """SELECT listing_blob, vin, price, mileage, year, make, model, trim, value_score
+               FROM listings
+               WHERE run_id = ? AND profile_id = ?
+               ORDER BY value_score DESC""",
+            (run_id, profile_id),
+        ).fetchall()
+    result: list[dict] = []
+    for row in rows:
+        blob = row[0]
+        if blob:
+            try:
+                result.append(json.loads(blob))
+                continue
+            except (json.JSONDecodeError, TypeError):
+                pass
+        # Fallback: construct dict from structured columns
+        row_d = dict(row)
+        row_d.pop("listing_blob", None)
+        result.append(row_d)
+    return result
 
 
 def get_history_summary() -> list[dict]:

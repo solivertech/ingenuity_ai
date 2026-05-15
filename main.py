@@ -98,12 +98,21 @@ def _run_profile(
     _log_run_header(run_id, run_at, dry_run, profile)
 
     try:
-        # ── Phase 1: Scrape ───────────────────────────────────────────────────
-        log.info("--- PHASE 1: SCRAPING ---")
-        fuel_filters = profile.fuel_type_filters or [None]
-        log.info("Fuel type searches: %s", ", ".join(f or "all" for f in fuel_filters))
-        domain_id = getattr(profile, "domain_id", "carvana_suvs")
+        domain_id = profile.domain_id
         adapter = load_adapter(domain_id)
+
+        return _run_generic_profile(
+            profile, adapter, domain_id,
+            run_id=run_id, run_at=run_at, timestamp=timestamp,
+            run_log_handler=run_log_handler, start_time=start_time,
+            skip_llm=skip_llm, force_backend=force_backend,
+            dry_run=dry_run, force_email=force_email,
+            no_email=no_email,
+        )
+
+        # === REMOVED: old automotive-only pipeline (carvana_suvs) ===
+        # The generic pipeline above handles all domains including carvana_suvs.
+        fuel_filters = profile.fuel_type_filters or [None]  # noqa: unreachable
         all_raw, vehicle_stats, scrape_browser = _scrape(run_id, profile, adapter)
         _log_scrape_summary(vehicle_stats, all_raw)
 
@@ -351,6 +360,283 @@ def _write_preview_html(
     with open(output_path, "w", encoding="utf-8") as fh:
         fh.write(email_html)
     log.info("Email preview written to: %s", output_path)
+
+
+# ── Generic domain pipeline ───────────────────────────────────────────────────
+
+def _run_generic_profile(
+    profile:         SearchProfile,
+    adapter,
+    domain_id:       str,
+    run_id:          str = "",
+    run_at:          str = "",
+    timestamp:       str = "",
+    run_log_handler  = None,
+    start_time:      float = 0.0,
+    skip_llm:        bool = False,
+    force_backend:   str | None = None,
+    dry_run:         bool = False,
+    force_email:     bool = False,
+    no_email:        bool = False,
+) -> list[dict]:
+    """
+    Domain-agnostic pipeline using the scraping engine.
+    Used for all domains except carvana_suvs.
+    """
+    from scraping.fetch.tiered_fetcher import TieredFetcher
+    from scraping.parse.multi_strategy import MultiStrategyParser
+    from scraping.pipeline.runner import PipelineRunner
+    from scraping.session.rate_limiter import RateLimiter
+    from scraping.session.queue import URLQueue
+    from scraping.session.session_pool import SessionPool
+    from scraping.discovery.drift_detector import DriftDetector
+    from alerts.condition_evaluator import ConditionEvaluator
+    from alerts.dispatcher import AlertDispatcher
+
+    _owns_log_handler = not run_id
+    if not run_id:
+        run_id = str(uuid.uuid4())
+        run_at = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_log_handler = start_run_log(config.OUTPUT_DIR, run_id, timestamp)
+        _log_run_header(run_id, run_at, dry_run, profile)
+    if not start_time:
+        start_time = time.monotonic()
+
+    domain_config = adapter.domain_config
+    fetcher = TieredFetcher()
+    parser = MultiStrategyParser()
+    _delay_ms = (
+        domain_config.scraping_delay_ms
+        if getattr(domain_config, "scraping_delay_ms", None) is not None
+        else getattr(config, "SCRAPING_DELAY_MS", 1500)
+    )
+    rate_limiter = RateLimiter(base_delay_ms=_delay_ms)
+    drift_detector = DriftDetector()
+    url_queue = URLQueue()
+    session_pool = SessionPool(proxies=getattr(config, "PROXY_LIST", []))
+
+    try:
+        # ── Phase 1: Scrape ───────────────────────────────────────────────────
+        log.info("--- PHASE 1: SCRAPING ---")
+        all_raw: list[dict] = []
+        base_targets = profile.search_targets or [{}]
+        # Expand by fuel_type_filters so each (target, fuel_type) pair is a separate fetch
+        fuel_types = [f for f in (profile.fuel_type_filters or []) if f is not None]
+        if fuel_types and base_targets != [{}]:
+            search_targets = [
+                {**t, "fuel_type": fuel}
+                for t in base_targets
+                for fuel in fuel_types
+            ]
+        else:
+            search_targets = base_targets
+
+        pagination_style = getattr(domain_config, "pagination_style", "none")
+        max_pages = 1 if pagination_style == "none" else getattr(domain_config, "max_pages", 1)
+
+        for target in search_targets:
+            log.info("Search target: %s", target or "(base URL)")
+            # Seed the queue for this target. Clear any prior entries so each
+            # target gets a clean slate; true cross-run resumability would
+            # require a per-target queue key (future enhancement).
+            url_queue.clear(domain_id)
+            url_queue.enqueue(domain_id, adapter.build_url(page=1, **target))
+
+            page = 0
+            while True:
+                pending = url_queue.dequeue(domain_id, limit=1)
+                if not pending:
+                    break
+                url = pending[0]
+                page += 1
+
+                log.debug("Fetching page %d: %s", page, url)
+                rate_limiter.wait_sync(domain_id)
+
+                proxy = session_pool.get_proxy() if session_pool.has_proxies else None
+                fetch_result = fetcher.fetch_sync(url, domain_config, proxy=proxy)
+                if fetch_result.error and proxy:
+                    session_pool.mark_proxy_blocked(proxy)
+                if fetch_result.error or not fetch_result.html:
+                    log.warning("Fetch failed on page %d (%s) — stopping", page, fetch_result.error)
+                    url_queue.mark_done(domain_id, url)
+                    break
+
+                parse_result = parser.parse(fetch_result.html, domain_config)
+                url_queue.mark_done(domain_id, url)
+
+                if not parse_result.items:
+                    log.info("No items on page %d — stopping", page)
+                    break
+
+                normalized = [
+                    adapter.normalize(item, parse_result.strategy_used)
+                    for item in parse_result.items
+                ]
+                valid = [n for n in normalized if n is not None]
+                log.info(
+                    "Page %d: %d items via %s (confidence=%.2f)",
+                    page, len(valid), parse_result.strategy_used, parse_result.confidence,
+                )
+                all_raw.extend(valid)
+
+                if len(parse_result.items) >= 20 and page < max_pages:
+                    url_queue.enqueue(domain_id, adapter.build_url(page=page + 1, **target))
+                else:
+                    break  # last page or max_pages reached
+
+        log.info("Scrape complete — %d total raw items", len(all_raw))
+
+        # ── Drift detection ───────────────────────────────────────────────────
+        if all_raw and domain_config.fields:
+            field_names = [f.name for f in domain_config.fields]
+            drift_detector.record_run(domain_id, all_raw, field_names)
+            drifted = drift_detector.check(domain_id)
+            if drifted:
+                log.warning("Drift detected for fields: %s", drifted)
+                from domains.generic.adapter import GenericAdapter
+                if isinstance(adapter, GenericAdapter):
+                    _attempt_auto_rediscovery(adapter, domain_config, drifted)
+
+        # ── Phase 2-4: Deduplicate, Filter, Enrich ────────────────────────────
+        log.info("--- PHASE 2-4: PIPELINE ---")
+        pipeline = PipelineRunner(domain_config)
+        pipeline_result = pipeline.run(all_raw, profile_rules=profile.filter_rules or [])
+        enriched = pipeline_result.enriched
+
+        if not enriched:
+            log.warning("No items survived the pipeline — profile complete with no output.")
+            return []
+
+        enriched.sort(key=lambda x: -(x.get("value_score") or 0))
+
+        # ── Phase 5: LLM analysis ─────────────────────────────────────────────
+        log.info("--- PHASE 5: LLM ANALYSIS ---")
+        llm_result = _run_llm_generic(
+            profile, enriched, domain_config, skip_llm, force_backend
+        )
+        _log_llm_summary(llm_result)
+
+        if dry_run:
+            log.info("Dry run complete — no data saved.")
+            return enriched
+
+        # ── Phase 6: Save ─────────────────────────────────────────────────────
+        log.info("--- PHASE 6: SAVING ---")
+        history_db.init_db()
+        history_db.save_run(
+            history_db.RunRecord(
+                run_id=run_id,
+                run_at=run_at,
+                listings_found=len(all_raw),
+                listings_saved=len(enriched),
+                llm_backend=llm_result.backend_used,
+                llm_model=llm_result.model_used,
+                duration_seconds=round(time.monotonic() - start_time, 2),
+            ),
+            domain_id=domain_id,
+        )
+        history_db.save_listings(
+            enriched, run_id, profile.profile_id,
+            domain_id=domain_id,
+            domain_config=domain_config,
+        )
+        log.info("Saved %d items (run_id=%s)", len(enriched), run_id)
+
+        # ── Phase 7: Alerts ───────────────────────────────────────────────────
+        log.info("--- PHASE 7: ALERTS ---")
+
+        # Load previous run's items and detect field-level changes
+        from alerts.change_detector import ChangeDetector
+        prev_items = history_db.get_last_items_for_profile(profile.profile_id)
+        changed_items: list[dict] = []
+        if prev_items:
+            tracked = [f.name for f in domain_config.fields] if domain_config.fields else ["price"]
+            changed_items = ChangeDetector(tracked_fields=tracked).detect(enriched, prev_items)
+            if changed_items:
+                log.info("ChangeDetector: %d item(s) with field changes", len(changed_items))
+
+        # Evaluate threshold-based alert conditions
+        evaluator = ConditionEvaluator(domain_config)
+        threshold_triggered = evaluator.evaluate(enriched)
+
+        # Union: threshold hits + changed items (de-duplicated by object id)
+        seen_ids: set[int] = {id(i) for i in threshold_triggered}
+        for item in changed_items:
+            if id(item) not in seen_ids:
+                threshold_triggered.append(item)
+                seen_ids.add(id(item))
+        triggered = threshold_triggered
+
+        # Fall back to "send on every run" when no alert conditions are defined
+        # and config.SEND_EMAIL is enabled — mirrors the automotive pipeline behaviour.
+        no_conditions = not evaluator.conditions
+        send_fallback = no_conditions and config.SEND_EMAIL and enriched
+
+        if no_email:
+            log.info("Email skipped (--no-email)")
+        elif triggered or force_email or send_fallback:
+            items_to_send = triggered if triggered else enriched[:5]
+            dispatcher = AlertDispatcher(channels=["email"])
+            results = dispatcher.dispatch(items_to_send, profile, domain_config, llm_result)
+            log.info("Alert dispatch results: %s", results)
+        else:
+            log.info("No alert conditions triggered")
+
+        duration = time.monotonic() - start_time
+        log.info("Generic profile complete in %.1fs — %d items saved", duration, len(enriched))
+        return enriched
+
+    finally:
+        if _owns_log_handler and run_log_handler:
+            end_run_log(run_log_handler)
+
+
+def _attempt_auto_rediscovery(adapter, domain_config, drifted_fields: list[str]) -> None:
+    """
+    Re-prompt the LLM to fix field paths for drifted fields and persist the
+    updated config. Only called for GenericAdapter (JSON-backed) domains.
+    """
+    try:
+        from analysis.llm import LLMAnalyzer
+        from discovery.schema_agent import SchemaAgent
+        from discovery.domain_config import save_config
+
+        llm = LLMAnalyzer()
+        agent = SchemaAgent(llm)
+        refined = agent._refine(domain_config, drifted_fields)
+        refined.selector_version = getattr(domain_config, "selector_version", 0) + 1
+        refined.last_validated_at = datetime.now(timezone.utc).isoformat()
+        save_config(refined)
+        adapter._config = refined  # update in-memory config for remaining pipeline steps
+        log.info(
+            "Auto-rediscovery: updated config for domain=%s fields=%s",
+            domain_config.domain_id, drifted_fields,
+        )
+    except Exception as exc:
+        log.warning("Auto-rediscovery failed: %s", exc)
+
+
+def _run_llm_generic(
+    profile: SearchProfile,
+    items: list[dict],
+    domain_config,
+    skip_llm: bool,
+    force_backend: str | None,
+) -> "LLMResult":
+    """Run LLM analysis for a domain-agnostic profile."""
+    if skip_llm:
+        return LLMResult(analysis=None, backend_used="none", model_used="",
+                         tokens_used=None, latency_ms=0, error="skipped via --no-llm")
+
+    analyzer = LLMAnalyzer(domain_config=domain_config)
+    ref_doc = ""
+    if profile.reference_doc_path:
+        from profiles import resolve_reference_doc
+        ref_doc = resolve_reference_doc(profile)
+
+    return analyzer.analyze(items[:30], reference_doc=ref_doc)
 
 
 # ── Scraping ──────────────────────────────────────────────────────────────────

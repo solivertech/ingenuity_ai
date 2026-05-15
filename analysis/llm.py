@@ -301,11 +301,11 @@ class LLMAnalyzer:
                 for part in raw_ids.split(","):
                     try:
                         row_id = int(part.strip())
-                        vin = id_to_vin.get(row_id, "")
-                        if vin:
-                            top_pick_vins.append(vin)
+                        identifier = id_to_vin.get(row_id, "")
+                        if identifier:
+                            top_pick_vins.append(identifier)
                         else:
-                            log.warning("TOP_PICKS ID %d has no VIN mapping (table size=%d)", row_id, len(id_to_vin))
+                            log.warning("TOP_PICKS ID %d not found in identifier map (table size=%d)", row_id, len(id_to_vin))
                     except ValueError:
                         pass
             else:
@@ -313,7 +313,7 @@ class LLMAnalyzer:
 
         cleaned = self._strip_id_refs("\n".join(kept_lines).rstrip())
         if top_pick_vins:
-            log.info("LLM top picks (VINs): %s", top_pick_vins)
+            log.info("LLM top picks: %s", top_pick_vins)
         else:
             log.warning("LLM did not return a parseable TOP_PICKS line")
         return cleaned, top_pick_vins
@@ -323,7 +323,7 @@ class LLMAnalyzer:
         Dynamic markdown table built from domain_config.fields.
         Sets self._last_id_to_vin using the first available identifier field.
         """
-        _ID_FIELDS = ("vin", "id", "listing_id", "url")
+        _ID_FIELDS = ("vin", "id", "listing_id", "listing_url", "url", "link", "href")
         top_listings = listings[:30]
         self._last_id_to_vin: dict[int, str] = {}
 
@@ -334,7 +334,8 @@ class LLMAnalyzer:
 
         rows: list[str] = []
         for idx, r in enumerate(top_listings, start=1):
-            uid = next((str(r[k]) for k in _ID_FIELDS if r.get(k)), "")
+            # Fall back to row index string so the mapping is never empty
+            uid = next((str(r[k]) for k in _ID_FIELDS if r.get(k)), str(idx))
             self._last_id_to_vin[idx] = uid
 
             cells = [str(idx)]
