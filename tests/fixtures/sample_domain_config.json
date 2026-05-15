@@ -1,0 +1,44 @@
+{
+  "domain_id": "test_market",
+  "display_name": "Test Market",
+  "base_url": "https://example.com/listings",
+  "pagination_style": "query_param",
+  "pagination_param": "page",
+  "max_pages": 5,
+  "requires_js": false,
+  "fields": [
+    {
+      "name": "title",
+      "display_name": "Title",
+      "json_paths": ["name"],
+      "css_selectors": [".listing-title"],
+      "data_type": "str",
+      "unit": "",
+      "required": true,
+      "is_primary_sort": false
+    },
+    {
+      "name": "price",
+      "display_name": "Price",
+      "json_paths": ["offers.price"],
+      "css_selectors": [".listing-price"],
+      "data_type": "float",
+      "unit": "$",
+      "required": true,
+      "is_primary_sort": true
+    }
+  ],
+  "filter_rules": [],
+  "scoring_weights": {"price": 100},
+  "system_prompt_context": "",
+  "alert_on_new": true,
+  "alert_on_drop_pct": 5.0,
+  "alert_conditions": [],
+  "created_at": "2026-01-01T00:00:00",
+  "user_request": "Find widgets for sale",
+  "fetch_tier": null,
+  "browser_engine": "chromium",
+  "scraping_delay_ms": null,
+  "selector_version": 1,
+  "last_validated_at": null
+}

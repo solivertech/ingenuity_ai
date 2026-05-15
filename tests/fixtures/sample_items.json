@@ -1,0 +1,6 @@
+[
+  {"vin": "ID001", "title": "Red Widget",   "price": 25.0, "in_stock": true},
+  {"vin": "ID002", "title": "Blue Widget",  "price": 35.0, "in_stock": true},
+  {"vin": "ID003", "title": "Green Widget", "price": 45.0, "in_stock": false},
+  {"vin": "ID004", "title": "Black Widget", "price": 55.0, "in_stock": true}
+]
