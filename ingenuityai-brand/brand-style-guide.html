@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IngenuityAI — Brand Style Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal-900: #04342C;
+    --teal-800: #085041;
+    --teal-700: #0A5C45;
+    --teal-600: #0F6E56;
+    --teal-500: #0F8F6E;
+    --teal-400: #1DB88E;
+    --teal-300: #3DC49A;
+    --teal-200: #5DCAA5;
+    --teal-100: #9FE1CB;
+    --teal-50:  #E1F5EE;
+    --forest:   #063D2E;
+    --ink:      #111110;
+    --slate:    #444441;
+    --muted:    #888780;
+    --stone:    #F1EFE8;
+    --white:    #ffffff;
+    --danger:   #E24B4A;
+    --warning:  #EF9F27;
+    --font: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  body { font-family: var(--font); color: var(--ink); background: var(--white); line-height: 1.6; }
+  .page { max-width: 900px; margin: 0 auto; padding: 4rem 2rem 6rem; }
+
+  /* Section */
+  .section { margin-bottom: 4rem; }
+  .section-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 1.25rem; padding-bottom: 10px;
+    border-bottom: 0.5px solid #D3D1C7;
+  }
+
+  /* Hero */
+  .brand-hero {
+    background: var(--forest); border-radius: 20px;
+    padding: 4rem 2rem; display: flex; flex-direction: column;
+    align-items: center; gap: 2rem; margin-bottom: 3rem;
+  }
+  .hero-lockup { display: flex; align-items: center; gap: 20px; }
+  .hero-wordmark { font-size: 52px; font-weight: 300; letter-spacing: -1.5px; color: var(--white); line-height: 1; }
+  .hero-wordmark span { font-weight: 600; color: var(--teal-400); }
+  .hero-tagline { font-size: 11px; font-weight: 400; letter-spacing: 4px; color: var(--teal-200); text-transform: uppercase; }
+
+  /* Colors */
+  .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .color-swatch { border-radius: 10px; overflow: hidden; border: 0.5px solid #D3D1C7; }
+  .swatch-block { height: 72px; }
+  .swatch-info { padding: 10px 12px; background: var(--white); }
+  .swatch-name { font-size: 13px; font-weight: 500; display: block; }
+  .swatch-hex { font-size: 11px; color: var(--muted); font-family: var(--mono); display: block; margin-top: 2px; }
+  .swatch-role { font-size: 11px; color: var(--muted); display: block; margin-top: 1px; }
+
+  /* Typography */
+  .type-table { width: 100%; border-collapse: collapse; }
+  .type-table tr { border-bottom: 0.5px solid #D3D1C7; }
+  .type-table tr:last-child { border-bottom: none; }
+  .type-table td { padding: 16px 0; vertical-align: middle; }
+  .type-meta { font-size: 11px; color: var(--muted); line-height: 1.7; width: 180px; }
+  .type-meta strong { display: block; color: var(--slate); font-size: 12px; margin-bottom: 2px; }
+
+  /* Logo lockups */
+  .logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .logo-cell {
+    border-radius: 14px; border: 0.5px solid #D3D1C7;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 2.5rem 1.5rem; gap: 10px;
+  }
+  .logo-cell.dark { background: var(--forest); border-color: transparent; }
+  .logo-cell.light { background: var(--stone); }
+  .logo-cell.white { background: var(--white); }
+  .logo-cell.wrong { background: var(--stone); position: relative; }
+  .logo-cell.wrong::after {
+    content: 'INCORRECT USE'; position: absolute; top: 10px; right: 10px;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--danger); background: #FCEBEB; padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .logo-label { font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; }
+  .logo-label.err { color: var(--danger); }
+
+  /* Spacing */
+  .space-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 0.5px solid #D3D1C7; }
+  .space-row:last-child { border-bottom: none; }
+  .space-block { background: var(--teal-400); border-radius: 3px; height: 18px; flex-shrink: 0; }
+  .space-val { font-size: 13px; font-weight: 500; font-family: var(--mono); min-width: 48px; color: var(--teal-500); }
+  .space-use { font-size: 13px; color: var(--slate); }
+
+  /* UI Elements */
+  .ui-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .btn-primary { background: var(--forest); color: var(--teal-50); border: none; padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font); }
+  .btn-outline { background: transparent; color: var(--teal-500); border: 1.5px solid var(--teal-500); padding: 9px 22px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font); }
+  .btn-ghost { background: var(--stone); color: var(--slate); border: 0.5px solid #D3D1C7; padding: 9px 22px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: var(--font); }
+  .pill { display: inline-block; font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.03em; }
+  .pill-active { background: var(--teal-50); color: var(--teal-800); }
+  .pill-paused { background: #FAEEDA; color: #633806; }
+  .pill-error  { background: #FCEBEB; color: #791F1F; }
+  .pill-neutral { background: var(--stone); color: var(--slate); border: 0.5px solid #D3D1C7; }
+
+  /* Do/Don't */
+  .do-dont { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rule-card { border-radius: 10px; padding: 16px 18px; border: 0.5px solid #D3D1C7; }
+  .rule-card.do { border-left: 3px solid var(--teal-500); border-radius: 0 10px 10px 0; }
+  .rule-card.dont { border-left: 3px solid var(--danger); border-radius: 0 10px 10px 0; }
+  .rule-head { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+  .rule-head.do-head { color: var(--teal-500); }
+  .rule-head.dont-head { color: var(--danger); }
+  .rule-item { font-size: 13px; color: var(--slate); padding: 4px 0; line-height: 1.5; }
+  .rule-item::before { content: '– '; color: var(--muted); }
+
+  /* Voice */
+  .voice-card { background: var(--stone); border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; }
+  .voice-card:last-child { margin-bottom: 0; }
+  .voice-title { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+  .voice-desc { font-size: 13px; color: var(--slate); line-height: 1.5; }
+
+  /* Icon sizes row */
+  .icon-row { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+  .icon-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .icon-size-label { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+  /* Page title */
+  .page-title { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal-500); margin-bottom: 4px; }
+  .page-subtitle { font-size: 32px; font-weight: 300; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 4rem; line-height: 1.2; }
+
+  @media (max-width: 600px) {
+    .color-grid { grid-template-columns: repeat(2, 1fr); }
+    .logo-grid { grid-template-columns: 1fr; }
+    .do-dont { grid-template-columns: 1fr; }
+    .hero-wordmark { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="page-title">IngenuityAI</p>
+  <p class="page-subtitle">Brand Style Guide</p>
+
+  <!-- Hero -->
+  <div class="brand-hero">
+    <div class="hero-lockup">
+      <svg width="72" height="72" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="72" height="72" rx="16" fill="#0A4A36"/>
+        <g transform="translate(40,40)">
+          <path fill="#0A5C45" d="M0,0 C-4,-16 -2,-38 7,-50 C12,-57 18,-58 20,-52 C23,-42 16,-24 6,-6 Z"/>
+          <path fill="#1DB88E" d="M0,0 C16,-4 38,-2 50,7 C57,12 58,18 52,20 C42,23 24,16 6,6 Z"/>
+          <path fill="#0F8F6E" d="M0,0 C4,16 2,38 -7,50 C-12,57 -18,58 -20,52 C-23,42 -16,24 -6,6 Z" opacity="0.85"/>
+          <path fill="#5DCAA5" d="M0,0 C-16,4 -38,2 -50,-7 C-57,-12 -58,-18 -52,-20 C-42,-23 -24,-16 -6,-6 Z" opacity="0.7"/>
+          <circle fill="#063D2E" cx="0" cy="0" r="8"/>
+          <circle fill="#3DC49A" cx="0" cy="0" r="4"/>
+          <circle fill="#E8FBF5" cx="0" cy="0" r="1.5"/>
+        </g>
+      </svg>
+      <div class="hero-wordmark">Ingenuity<span>AI</span></div>
+    </div>
+    <div class="hero-tagline">Autonomous Web Intelligence</div>
+  </div>
+
+  <!-- Colors -->
+  <div class="section">
+    <p class="section-label">Color palette</p>
+    <div class="color-grid">
+      <div class="color-swatch"><div class="swatch-block" style="background:#063D2E"></div><div class="swatch-info"><span class="swatch-name">Forest</span><span class="swatch-hex">#063D2E</span><span class="swatch-role">Primary dark / icon bg</span></div></div>
+      <div class="color-swatch"><div class="swatch-block" style="background:#0F8F6E"></div><div class="swatch-info"><span class="swatch-name">Teal core</span><span class="swatch-hex">#0F8F6E</span><span class="swatch-role">Brand primary</span></div></div>
+      <div class="color-swatch"><div class="swatch-block" style="background:#1DB88E"></div><div class="swatch-info"><span class="swatch-name">Teal mid</span><span class="swatch-hex">#1DB88E</span><span class="swatch-role">Accent / "AI" suffix</span></div></div>
+      <div class="color-swatch"><div class="swatch-block" style="background:#5DCAA5"></div><div class="swatch-info"><span class="swatch-name">Teal light</span><span class="swatch-hex">#5DCAA5</span><span class="swatch-role">Highlights / fills</span></div></div>
+      <div class="color-swatch"><div class="swatch-block" style="background:#E1F5EE"></div><div class="swatch-info"><span class="swatch-name">Teal wash</span><span class="swatch-hex">#E1F5EE</span><span class="swatch-role">Tag backgrounds</span></div></div>
+      <div class="color-swatch"><div class="swatch-block" style="background:#111110"></div><div class="swatch-info"><span class="swatch-name">Ink</span><span class="swatch-hex">#111110</span><span class="swatch-role">Body text</span></div></div>
+      <div class="color-swatch"><div class="swatch-block" style="background:#444441"></div><div class="swatch-info"><span class="swatch-name">Slate</span><span class="swatch-hex">#444441</span><span class="swatch-role">Secondary text</span></div></div>
+      <div class="color-swatch"><div class="swatch-block" style="background:#F1EFE8"></div><div class="swatch-info"><span class="swatch-name">Stone</span><span class="swatch-hex">#F1EFE8</span><span class="swatch-role">Surface / backgrounds</span></div></div>
+    </div>
+  </div>
+
+  <!-- Typography -->
+  <div class="section">
+    <p class="section-label">Typography — system font stack</p>
+    <p style="font-size:12px; color: var(--muted); margin-bottom: 1rem; font-family: var(--mono);">-apple-system, 'Helvetica Neue', Arial, sans-serif</p>
+    <table class="type-table">
+      <tr><td class="type-meta"><strong>Display</strong>52px / weight 300<br>tracking: −1.5px</td><td><span style="font-size:42px; font-weight:300; letter-spacing:-1.5px; line-height:1;">Ingenuity</span></td></tr>
+      <tr><td class="type-meta"><strong>Heading 1</strong>32px / weight 400<br>tracking: −0.5px</td><td><span style="font-size:30px; font-weight:400; letter-spacing:-0.5px; line-height:1.2;">Autonomous intelligence</span></td></tr>
+      <tr><td class="type-meta"><strong>Heading 2</strong>22px / weight 500<br>tracking: 0</td><td><span style="font-size:22px; font-weight:500; line-height:1.3;">Watch anything on the web</span></td></tr>
+      <tr><td class="type-meta"><strong>Heading 3</strong>17px / weight 500<br>tracking: 0</td><td><span style="font-size:17px; font-weight:500;">Set up a search in seconds</span></td></tr>
+      <tr><td class="type-meta"><strong>Body</strong>15px / weight 400<br>line-height: 1.6</td><td><span style="font-size:15px; color: #444441; line-height:1.6; display:block;">Describe what you want to monitor. IngenuityAI finds the data, builds the logic, and alerts you when conditions are met — no code required.</span></td></tr>
+      <tr><td class="type-meta"><strong>Label / UI</strong>11px / weight 500<br>tracking: +0.08em, uppercase</td><td><span style="font-size:11px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color: #888780;">Search profile · Active · 3 alerts</span></td></tr>
+      <tr><td class="type-meta"><strong>Code / mono</strong>13px / weight 400<br>monospace</td><td><span style="font-size:13px; font-family: var(--mono); color:#0F8F6E; background:#E1F5EE; padding:4px 10px; border-radius:6px;">ingenuityai.app</span></td></tr>
+    </table>
+  </div>
+
+  <!-- Logo lockups -->
+  <div class="section">
+    <p class="section-label">Logo lockups</p>
+    <div class="logo-grid">
+      <div>
+        <div class="logo-cell dark">
+          <svg viewBox="0 0 260 70" width="240" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(32,35)">
+              <path fill="#0A5C45" d="M0,0 C-4,-14 -2,-34 6,-44 C11,-51 16,-52 18,-47 C20,-37 14,-21 5,-5 Z"/>
+              <path fill="#1DB88E" d="M0,0 C14,-4 34,-2 44,6 C51,11 52,16 47,18 C37,20 21,14 5,5 Z"/>
+              <path fill="#0F8F6E" d="M0,0 C4,14 2,34 -6,44 C-11,51 -16,52 -18,47 C-20,37 -14,21 -5,5 Z" opacity="0.85"/>
+              <path fill="#5DCAA5" d="M0,0 C-14,4 -34,2 -44,-6 C-51,-11 -52,-16 -47,-18 C-37,-20 -21,-14 -5,-5 Z" opacity="0.7"/>
+              <circle fill="#063D2E" cx="0" cy="0" r="6"/>
+              <circle fill="#3DC49A" cx="0" cy="0" r="3"/>
+              <circle fill="#E8FBF5" cx="0" cy="0" r="1.1"/>
+            </g>
+            <text x="72" y="43" font-family="-apple-system,Helvetica Neue,sans-serif" font-size="26" font-weight="300" fill="#ffffff" letter-spacing="-0.5">Ingenuity<tspan font-weight="600" fill="#1DB88E">AI</tspan></text>
+          </svg>
+        </div>
+        <p class="logo-label">Primary — dark background</p>
+      </div>
+      <div>
+        <div class="logo-cell white">
+          <svg viewBox="0 0 260 70" width="240" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(32,35)">
+              <path fill="#0A5C45" d="M0,0 C-4,-14 -2,-34 6,-44 C11,-51 16,-52 18,-47 C20,-37 14,-21 5,-5 Z"/>
+              <path fill="#1DB88E" d="M0,0 C14,-4 34,-2 44,6 C51,11 52,16 47,18 C37,20 21,14 5,5 Z"/>
+              <path fill="#0F8F6E" d="M0,0 C4,14 2,34 -6,44 C-11,51 -16,52 -18,47 C-20,37 -14,21 -5,5 Z" opacity="0.85"/>
+              <path fill="#5DCAA5" d="M0,0 C-14,4 -34,2 -44,-6 C-51,-11 -52,-16 -47,-18 C-37,-20 -21,-14 -5,-5 Z" opacity="0.7"/>
+              <circle fill="#063D2E" cx="0" cy="0" r="6"/>
+              <circle fill="#3DC49A" cx="0" cy="0" r="3"/>
+              <circle fill="#E8FBF5" cx="0" cy="0" r="1.1"/>
+            </g>
+            <text x="72" y="43" font-family="-apple-system,Helvetica Neue,sans-serif" font-size="26" font-weight="300" fill="#111110" letter-spacing="-0.5">Ingenuity<tspan font-weight="600" fill="#0F8F6E">AI</tspan></text>
+          </svg>
+        </div>
+        <p class="logo-label">Secondary — light background</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Icon sizes -->
+  <div class="section">
+    <p class="section-label">App icon — size scale</p>
+    <div style="background: var(--stone); border-radius: 14px; padding: 2rem; display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap;">
+      <div class="icon-item">
+        <svg width="120" height="120" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="72" height="72" rx="16" fill="#0A4A36"/><g transform="translate(40,40)"><path fill="#0A5C45" d="M0,0 C-4,-16 -2,-38 7,-50 C12,-57 18,-58 20,-52 C23,-42 16,-24 6,-6 Z"/><path fill="#1DB88E" d="M0,0 C16,-4 38,-2 50,7 C57,12 58,18 52,20 C42,23 24,16 6,6 Z"/><path fill="#0F8F6E" d="M0,0 C4,16 2,38 -7,50 C-12,57 -18,58 -20,52 C-23,42 -16,24 -6,6 Z" opacity="0.85"/><path fill="#5DCAA5" d="M0,0 C-16,4 -38,2 -50,-7 C-57,-12 -58,-18 -52,-20 C-42,-23 -24,-16 -6,-6 Z" opacity="0.7"/><circle fill="#063D2E" cx="0" cy="0" r="8"/><circle fill="#3DC49A" cx="0" cy="0" r="4"/><circle fill="#E8FBF5" cx="0" cy="0" r="1.5"/></g></svg>
+        <span class="icon-size-label">120px</span>
+      </div>
+      <div class="icon-item">
+        <svg width="72" height="72" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="72" height="72" rx="16" fill="#0A4A36"/><g transform="translate(40,40)"><path fill="#0A5C45" d="M0,0 C-4,-16 -2,-38 7,-50 C12,-57 18,-58 20,-52 C23,-42 16,-24 6,-6 Z"/><path fill="#1DB88E" d="M0,0 C16,-4 38,-2 50,7 C57,12 58,18 52,20 C42,23 24,16 6,6 Z"/><path fill="#0F8F6E" d="M0,0 C4,16 2,38 -7,50 C-12,57 -18,58 -20,52 C-23,42 -16,24 -6,6 Z" opacity="0.85"/><path fill="#5DCAA5" d="M0,0 C-16,4 -38,2 -50,-7 C-57,-12 -58,-18 -52,-20 C-42,-23 -24,-16 -6,-6 Z" opacity="0.7"/><circle fill="#063D2E" cx="0" cy="0" r="8"/><circle fill="#3DC49A" cx="0" cy="0" r="4"/><circle fill="#E8FBF5" cx="0" cy="0" r="1.5"/></g></svg>
+        <span class="icon-size-label">72px</span>
+      </div>
+      <div class="icon-item">
+        <svg width="48" height="48" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="72" height="72" rx="16" fill="#0A4A36"/><g transform="translate(40,40)"><path fill="#0A5C45" d="M0,0 C-4,-16 -2,-38 7,-50 C12,-57 18,-58 20,-52 C23,-42 16,-24 6,-6 Z"/><path fill="#1DB88E" d="M0,0 C16,-4 38,-2 50,7 C57,12 58,18 52,20 C42,23 24,16 6,6 Z"/><path fill="#0F8F6E" d="M0,0 C4,16 2,38 -7,50 C-12,57 -18,58 -20,52 C-23,42 -16,24 -6,6 Z" opacity="0.85"/><path fill="#5DCAA5" d="M0,0 C-16,4 -38,2 -50,-7 C-57,-12 -58,-18 -52,-20 C-42,-23 -24,-16 -6,-6 Z" opacity="0.7"/><circle fill="#063D2E" cx="0" cy="0" r="8"/><circle fill="#3DC49A" cx="0" cy="0" r="4"/><circle fill="#E8FBF5" cx="0" cy="0" r="1.5"/></g></svg>
+        <span class="icon-size-label">48px</span>
+      </div>
+      <div class="icon-item">
+        <svg width="32" height="32" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="72" height="72" rx="16" fill="#0A4A36"/><g transform="translate(40,40)"><path fill="#0A5C45" d="M0,0 C-4,-16 -2,-38 7,-50 C12,-57 18,-58 20,-52 C23,-42 16,-24 6,-6 Z"/><path fill="#1DB88E" d="M0,0 C16,-4 38,-2 50,7 C57,12 58,18 52,20 C42,23 24,16 6,6 Z"/><path fill="#0F8F6E" d="M0,0 C4,16 2,38 -7,50 C-12,57 -18,58 -20,52 C-23,42 -16,24 -6,6 Z" opacity="0.85"/><path fill="#5DCAA5" d="M0,0 C-16,4 -38,2 -50,-7 C-57,-12 -58,-18 -52,-20 C-42,-23 -24,-16 -6,-6 Z" opacity="0.7"/><circle fill="#063D2E" cx="0" cy="0" r="8"/><circle fill="#3DC49A" cx="0" cy="0" r="4"/><circle fill="#E8FBF5" cx="0" cy="0" r="1.5"/></g></svg>
+        <span class="icon-size-label">32px</span>
+      </div>
+      <div class="icon-item">
+        <svg width="16" height="16" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="72" height="72" rx="16" fill="#0A4A36"/><g transform="translate(40,40)"><path fill="#1DB88E" d="M0,0 C16,-4 38,-2 50,7 C57,12 58,18 52,20 C42,23 24,16 6,6 Z"/><path fill="#0F8F6E" d="M0,0 C-4,-16 -2,-38 7,-50 C12,-57 18,-58 20,-52 C23,-42 16,-24 6,-6 Z"/><circle fill="#3DC49A" cx="0" cy="0" r="10"/></g></svg>
+        <span class="icon-size-label">16px (favicon)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spacing -->
+  <div class="section">
+    <p class="section-label">Spacing scale</p>
+    <div>
+      <div class="space-row"><div class="space-block" style="width:4px;"></div><span class="space-val">4px</span><span class="space-use">Icon gaps, tight list spacing</span></div>
+      <div class="space-row"><div class="space-block" style="width:8px;"></div><span class="space-val">8px</span><span class="space-use">Component internal padding, label gaps</span></div>
+      <div class="space-row"><div class="space-block" style="width:16px;"></div><span class="space-val">16px</span><span class="space-use">Card padding (compact), element gaps</span></div>
+      <div class="space-row"><div class="space-block" style="width:24px;"></div><span class="space-val">24px</span><span class="space-use">Card padding (comfortable), grid gaps</span></div>
+      <div class="space-row"><div class="space-block" style="width:48px;"></div><span class="space-val">48px</span><span class="space-use">Section breaks, major layout margins</span></div>
+      <div class="space-row"><div class="space-block" style="width:80px;"></div><span class="space-val">80px</span><span class="space-use">Page-level vertical rhythm</span></div>
+    </div>
+  </div>
+
+  <!-- Border radius -->
+  <div class="section">
+    <p class="section-label">Border radius</p>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+      <div style="text-align:center;"><div style="width:60px;height:60px;background:var(--teal-50);border:1.5px solid var(--teal-200);border-radius:4px;"></div><p style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono);">4px<br>subtle</p></div>
+      <div style="text-align:center;"><div style="width:60px;height:60px;background:var(--teal-50);border:1.5px solid var(--teal-200);border-radius:8px;"></div><p style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono);">8px<br>default</p></div>
+      <div style="text-align:center;"><div style="width:60px;height:60px;background:var(--teal-50);border:1.5px solid var(--teal-200);border-radius:12px;"></div><p style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono);">12px<br>cards</p></div>
+      <div style="text-align:center;"><div style="width:60px;height:60px;background:var(--teal-50);border:1.5px solid var(--teal-200);border-radius:16px;"></div><p style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono);">16px<br>large</p></div>
+      <div style="text-align:center;"><div style="width:60px;height:60px;background:var(--teal-50);border:1.5px solid var(--teal-200);border-radius:30px;"></div><p style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono);">9999px<br>pills</p></div>
+    </div>
+  </div>
+
+  <!-- UI Elements -->
+  <div class="section">
+    <p class="section-label">UI elements</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;">Buttons</p>
+    <div class="ui-row">
+      <button class="btn-primary">Start watching</button>
+      <button class="btn-outline">View alerts</button>
+      <button class="btn-ghost">Cancel</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;margin-top:20px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;">Status pills</p>
+    <div class="ui-row">
+      <span class="pill pill-active">Active</span>
+      <span class="pill" style="background:#E1F5EE;color:#085041;">3 alerts today</span>
+      <span class="pill pill-paused">Paused</span>
+      <span class="pill pill-error">Error</span>
+      <span class="pill pill-neutral">Email</span>
+      <span class="pill pill-neutral">Push</span>
+      <span class="pill pill-neutral">SMS</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;margin-top:20px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;">Input</p>
+    <input type="text" placeholder="Describe what you want to watch..." style="width:100%;padding:11px 16px;border:1px solid #D3D1C7;border-radius:8px;font-size:14px;font-family:var(--font);outline:none;color:var(--ink);">
+  </div>
+
+  <!-- Do/Don't -->
+  <div class="section">
+    <p class="section-label">Logo usage — do and don't</p>
+    <div class="do-dont">
+      <div class="rule-card do">
+        <p class="rule-head do-head">Do</p>
+        <p class="rule-item">Use on dark teal or white backgrounds only</p>
+        <p class="rule-item">Maintain clear space equal to mark height on all sides</p>
+        <p class="rule-item">Use the contained icon for app icons and favicons</p>
+        <p class="rule-item">Keep "AI" in teal — always contrasting with "Ingenuity"</p>
+        <p class="rule-item">Scale proportionally — never stretch or distort</p>
+        <p class="rule-item">Minimum wordmark size: 120px wide</p>
+      </div>
+      <div class="rule-card dont">
+        <p class="rule-head dont-head">Don't</p>
+        <p class="rule-item">Recolor the mark or wordmark outside the brand palette</p>
+        <p class="rule-item">Place on busy or photographic backgrounds</p>
+        <p class="rule-item">Add drop shadows, outlines, or glow effects</p>
+        <p class="rule-item">Use the wordmark below 120px wide</p>
+        <p class="rule-item">Rearrange elements or alter letter spacing</p>
+        <p class="rule-item">Use grayscale versions of the mark</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice -->
+  <div class="section">
+    <p class="section-label">Brand voice</p>
+    <div class="voice-card"><p class="voice-title">Precise, not jargon-heavy</p><p class="voice-desc">Say "finds the data you're looking for" — not "leverages AI-driven schema extraction pipelines."</p></div>
+    <div class="voice-card"><p class="voice-title">Confident, not boastful</p><p class="voice-desc">Let the capability speak. Avoid superlatives like "the most powerful" or "revolutionary."</p></div>
+    <div class="voice-card"><p class="voice-title">Human, not robotic</p><p class="voice-desc">Write like you're explaining it to a smart friend, not drafting a press release.</p></div>
+    <div class="voice-card"><p class="voice-title">Active voice always</p><p class="voice-desc">"IngenuityAI monitors the page and sends you an alert" — not "alerts are sent when conditions are detected."</p></div>
+  </div>
+
+  <p style="font-size:11px;color:var(--muted);text-align:center;padding-top:2rem;border-top:0.5px solid #D3D1C7;">IngenuityAI Brand Style Guide · ingenuityai.app</p>
+</div>
+</body>
+</html>

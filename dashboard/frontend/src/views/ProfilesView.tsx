@@ -44,7 +44,7 @@ export function ProfilesView() {
         <h1 className="text-xl font-semibold text-gray-900">Profiles</h1>
         <button
           onClick={() => setEditing(null)}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
+          className="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700"
         >
           + New profile
         </button>
@@ -65,7 +65,7 @@ export function ProfilesView() {
                 <h3 className="font-semibold text-gray-900">{p.label}</h3>
                 <div className="flex items-center gap-2 mt-0.5">
                   <code className="text-xs text-gray-400">{p.profile_id}</code>
-                  <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full">
+                  <span className="text-xs px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full">
                     {p.domain_id ?? 'carvana_suvs'}
                   </span>
                 </div>

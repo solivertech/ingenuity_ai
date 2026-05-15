@@ -102,7 +102,7 @@ export function LogTerminal({ jobId, onDone }: Props) {
         <div className="text-center py-1 bg-gray-800 border-t border-gray-700">
           <button
             onClick={() => { setAutoScroll(true); bottomRef.current?.scrollIntoView() }}
-            className="text-xs text-indigo-400 hover:text-indigo-300"
+            className="text-xs text-brand-400 hover:text-brand-300"
           >
             ↓ Jump to bottom
           </button>

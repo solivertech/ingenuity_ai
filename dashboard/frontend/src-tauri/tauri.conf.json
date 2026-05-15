@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Autospy",
+  "productName": "IngenuityAI",
   "version": "0.3.0",
-  "identifier": "com.autospy.app",
+  "identifier": "com.ingenuityai.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Autospy",
+        "title": "IngenuityAI",
         "width": 1280,
         "height": 820,
         "minWidth": 900,

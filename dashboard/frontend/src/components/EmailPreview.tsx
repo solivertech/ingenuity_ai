@@ -11,7 +11,7 @@ export function EmailPreview({ html }: Props) {
           href={url}
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-indigo-600 hover:underline"
+          className="text-xs text-brand-600 hover:underline"
         >
           Open in tab ↗
         </a>

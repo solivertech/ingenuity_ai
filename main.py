@@ -883,7 +883,7 @@ def _log_run_footer(
 def check_setup() -> None:
     """CLI-facing setup check: delegates to setup_checks.run_setup_checks() and
     pretty-prints the structured results for console output."""
-    print("\n=== Autospy — Setup Check ===\n")
+    print("\n=== IngenuityAI — Setup Check ===\n")
 
     from dashboard.backend.setup_checks import run_setup_checks
     results = run_setup_checks()

@@ -84,7 +84,7 @@ def build_email_html(
     price_drops: list[dict],
     trends: dict | None = None,
     new_vins: set[str] | None = None,
-    profile_label: str = "Autospy",
+    profile_label: str = "IngenuityAI",
     show_financing: bool = True,
     down_payment: int | None = None,
     num_vehicles: int = 1,
@@ -93,7 +93,7 @@ def build_email_html(
     """Public wrapper around _build_html for use by external callers.
 
     domain_config: optional DomainConfig; if provided, its display_name is used
-    in the footer in place of the generic Autospy branding.
+    in the footer in place of the generic IngenuityAI branding.
     """
     label = (domain_config.display_name if domain_config else None) or profile_label
     return _build_html(
@@ -112,7 +112,7 @@ def send_summary(
     force: bool = False,
     new_vins: set[str] | None = None,
     email_to: list[str] | None = None,
-    profile_label: str = "Autospy",
+    profile_label: str = "IngenuityAI",
     show_financing: bool = True,
     down_payment: int | None = None,
     num_vehicles: int = 1,
@@ -223,10 +223,10 @@ def send_feedback_email(
         return False
 
     stars = ("★" * rating + "☆" * (5 - rating)) if rating else "not rated"
-    subject = f"[Autospy Feedback] {category} from {username}"
+    subject = f"[IngenuityAI Feedback] {category} from {username}"
     html = f"""
 <html><body style="font-family:sans-serif;max-width:600px;margin:40px auto;color:#222">
-  <h2 style="color:#4f46e5;margin-bottom:4px">Autospy Beta Feedback</h2>
+  <h2 style="color:#4f46e5;margin-bottom:4px">IngenuityAI Beta Feedback</h2>
   <hr style="border:none;border-top:1px solid #e5e7eb;margin-bottom:24px">
   <table style="width:100%;border-collapse:collapse;font-size:14px">
     <tr><td style="padding:6px 0;color:#6b7280;width:110px">From</td>
@@ -237,7 +237,7 @@ def send_feedback_email(
         <td style="padding:6px 0;font-size:18px;letter-spacing:2px">{stars}</td></tr>
   </table>
   <div style="margin-top:20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;font-size:14px;line-height:1.6;white-space:pre-wrap">{message}</div>
-  <p style="margin-top:24px;font-size:12px;color:#9ca3af">Sent automatically by Autospy · {datetime.now().strftime("%Y-%m-%d %H:%M")}</p>
+  <p style="margin-top:24px;font-size:12px;color:#9ca3af">Sent automatically by IngenuityAI · {datetime.now().strftime("%Y-%m-%d %H:%M")}</p>
 </body></html>
 """
 
@@ -283,7 +283,7 @@ def _is_configured() -> bool:
 def _build_subject(
     listings: list[dict],
     price_drops: list[dict],
-    profile_label: str = "Autospy",
+    profile_label: str = "IngenuityAI",
 ) -> str:
     n    = len(listings)
     top  = listings[0] if listings else None
@@ -304,7 +304,7 @@ def _build_html(
     price_drops: list[dict],
     trends: dict,
     new_vins: set[str] | None = None,
-    profile_label: str = "Autospy",
+    profile_label: str = "IngenuityAI",
     show_financing: bool = True,
     down_payment: int | None = None,
     num_vehicles: int = 1,
@@ -543,7 +543,7 @@ def _build_html(
     parts.append(
         f"<hr style='margin-top:32px'>"
         f"<p style='color:#999;font-size:12px'>"
-        f"Autospy v{_VERSION} | "
+        f"IngenuityAI v{_VERSION} | "
         f"LLM: {llm_result.backend_used} ({llm_result.model_used or 'N/A'})"
         f"{cache_str} | "
         f"Full listing CSV attached"

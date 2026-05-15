@@ -1,3 +1,5 @@
+@import '../../../ingenuityai-brand/assets/brand.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

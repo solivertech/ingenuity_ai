@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { api } from '../api/client'
 import { useAuth } from '../App'
 
@@ -46,12 +46,12 @@ export default function LoginPage() {
     }
   }
 
-  const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
+  const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500'
 
   if (mode === 'checking') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Connecting…</div>
+        <div className="text-gray-400 text-sm">Connectingâ€¦</div>
       </div>
     )
   }
@@ -61,8 +61,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo / heading */}
         <div className="text-center mb-8">
-          <img src={`${import.meta.env.BASE_URL}autospy-logo.png`} alt="Autospy" className="w-12 h-12 mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900">Autospy Portal</h1>
+          <img src={`${import.meta.env.BASE_URL}ingenuityai_logo.svg`} alt="IngenuityAI" className="h-16 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900">IngenuityAI Portal</h1>
           <p className="text-sm text-gray-500 mt-1">
             {mode === 'setup' ? 'Create your admin account to get started' : 'Sign in to your account'}
           </p>
@@ -70,7 +70,7 @@ export default function LoginPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           {mode === 'setup' && (
-            <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-800">
+            <div className="mb-4 p-3 bg-brand-50 border border-brand-200 rounded-lg text-xs text-brand-800">
               No accounts exist yet. Create the admin account below.
             </div>
           )}
@@ -117,10 +117,10 @@ export default function LoginPage() {
 
             <button
               type="submit" disabled={submitting}
-              className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 transition-colors"
             >
               {submitting
-                ? (mode === 'setup' ? 'Creating account…' : 'Signing in…')
+                ? (mode === 'setup' ? 'Creating accountâ€¦' : 'Signing inâ€¦')
                 : (mode === 'setup' ? 'Create admin account' : 'Sign in')}
             </button>
           </form>

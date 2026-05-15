@@ -126,7 +126,7 @@ export function HistoryView() {
             {[30, 60, 90].map(d => (
               <button key={d} onClick={() => setDays(d)}
                 className={`px-3 py-1 text-xs rounded border transition-colors ${
-                  days === d ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  days === d ? 'bg-brand-600 text-white border-brand-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'
                 }`}
               >{d}d</button>
             ))}

@@ -128,7 +128,7 @@ export function RunView({ onActiveJobChange, externalJobId }: RunViewProps) {
                 onClick={() => toggleProfile(p.profile_id)}
                 className={`text-left px-4 py-3 rounded-lg border-2 transition-colors ${
                   active
-                    ? 'border-indigo-500 bg-indigo-50'
+                    ? 'border-brand-500 bg-brand-50'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
@@ -158,8 +158,8 @@ export function RunView({ onActiveJobChange, externalJobId }: RunViewProps) {
               <button key={b} type="button" onClick={() => setBackend(b)}
                 className={`px-3 py-1 rounded-full text-sm border transition-colors ${
                   backend === b
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-brand-400'
                 }`}
               >
                 {b === 'auto' ? 'Auto (NVIDIA → Cerebras → Anthropic → Ollama)' : b === 'none' ? 'No LLM' : b === 'api' ? 'Anthropic' : b === 'cerebras' ? 'Cerebras' : b === 'nvidia' ? 'NVIDIA NIM' : b.toUpperCase()}
@@ -187,7 +187,7 @@ export function RunView({ onActiveJobChange, externalJobId }: RunViewProps) {
       {/* Action buttons */}
       <div className="flex flex-wrap gap-3">
         <button onClick={() => startRun(false)} disabled={running}
-          className={`${btnBase} bg-indigo-600 text-white hover:bg-indigo-700`}>
+          className={`${btnBase} bg-brand-600 text-white hover:bg-brand-700`}>
           ▶ Run now
         </button>
         <button onClick={() => startRun(true)} disabled={running}

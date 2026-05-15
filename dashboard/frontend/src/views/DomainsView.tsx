@@ -51,7 +51,7 @@ export function DomainsView() {
         </div>
         <button
           onClick={() => setShowWizard(true)}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
+          className="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700"
         >
           + Discover new domain
         </button>
@@ -68,7 +68,7 @@ export function DomainsView() {
         <div className="text-center py-12 text-gray-400">Loading…</div>
       ) : domains.length === 0 ? (
         <div className="text-center py-16 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg space-y-2">
-          <div className="text-3xl">🔍</div>
+          <div className="text-3xl">🔍</div>
           <p>No domains discovered yet.</p>
           <p className="text-sm">Click "Discover new domain" to get started.</p>
         </div>
@@ -105,7 +105,7 @@ export function DomainsView() {
 
               <div className="mt-3 flex flex-wrap gap-1">
                 {d.fields.slice(0, 6).map(f => (
-                  <span key={f.name} className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full">
+                  <span key={f.name} className="text-xs px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full">
                     {f.display_name}
                   </span>
                 ))}
@@ -160,20 +160,20 @@ function StepIndicator({ current }: { current: number }) {
           <div key={n} className="flex items-center flex-1 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${
-                done   ? 'bg-indigo-600 text-white' :
-                active ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-500' :
+                done   ? 'bg-brand-600 text-white' :
+                active ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-500' :
                          'bg-gray-100 text-gray-400'
               }`}>
                 {done ? '✓' : n}
               </div>
               <span className={`text-xs truncate hidden sm:block ${
-                active ? 'text-indigo-700 font-medium' : 'text-gray-400'
+                active ? 'text-brand-700 font-medium' : 'text-gray-400'
               }`}>
                 {label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`h-px flex-1 mx-2 ${done ? 'bg-indigo-300' : 'bg-gray-200'}`} />
+              <div className={`h-px flex-1 mx-2 ${done ? 'bg-brand-300' : 'bg-gray-200'}`} />
             )}
           </div>
         )
@@ -277,7 +277,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
     setEditedFields(prev => prev.map((f, i) => i === idx ? { ...f, [key]: value } : f))
   }
 
-  const handleSave = async (fromStep: number) => {
+  const handleSave = async (_fromStep: number) => {
     if (!config) return
     setSaving(true)
     setSaveError(null)
@@ -317,7 +317,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
                 value={displayName}
                 onChange={e => handleDisplayNameChange(e.target.value)}
                 placeholder="Zillow Austin Homes"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
             <div className="space-y-1.5">
@@ -329,7 +329,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
                 value={domainId}
                 onChange={e => { setDomainId(e.target.value); setIdTouched(true) }}
                 placeholder="zillow_austin_homes"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               {domainId && !/^[a-z0-9_]+$/.test(domainId) && (
                 <p className="text-xs text-red-500">Only lowercase letters, numbers, underscores</p>
@@ -344,7 +344,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
               value={url}
               onChange={e => setUrl(e.target.value)}
               placeholder="https://www.example.com/listings"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -360,7 +360,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
               onChange={e => setUserRequest(e.target.value)}
               rows={5}
               placeholder={"I want to track listings. Extract these fields:\n- Price\n- Square footage\n- Bedrooms / bathrooms\n- Address\n- Days on market\n- Listing URL"}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
 
@@ -368,7 +368,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
             <button
               onClick={startDiscovery}
               disabled={!step1Valid}
-              className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Start discovery →
             </button>
@@ -419,7 +419,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
                 </button>
                 <button
                   onClick={startDiscovery}
-                  className="px-4 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"
+                  className="px-4 py-1.5 bg-brand-600 text-white rounded-md text-sm font-medium hover:bg-brand-700"
                 >
                   Retry
                 </button>
@@ -468,7 +468,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
                     </td>
                     <td className="px-4 py-2">
                       {f.is_primary_sort
-                        ? <span className="text-indigo-500">★</span>
+                        ? <span className="text-brand-500">★</span>
                         : <span className="text-gray-200">—</span>}
                     </td>
                   </tr>
@@ -487,7 +487,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
             <button
               onClick={() => handleSave(3)}
               disabled={saving}
-              className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              className="px-5 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save as-is →'}
             </button>
@@ -524,14 +524,14 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
                           type="text"
                           value={f.display_name}
                           onChange={e => updateField(idx, 'display_name', e.target.value)}
-                          className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                          className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-brand-400"
                         />
                       </td>
                       <td className="px-3 py-1.5">
                         <select
                           value={f.data_type}
                           onChange={e => updateField(idx, 'data_type', e.target.value)}
-                          className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                          className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-brand-400"
                         >
                           {['float', 'int', 'str', 'bool'].map(t => (
                             <option key={t} value={t}>{t}</option>
@@ -544,7 +544,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
                           value={f.unit}
                           onChange={e => updateField(idx, 'unit', e.target.value)}
                           placeholder="$, mi, sqft…"
-                          className="w-24 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                          className="w-24 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-brand-400"
                         />
                       </td>
                       <td className="px-3 py-1.5 text-center">
@@ -552,7 +552,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
                           type="checkbox"
                           checked={f.required}
                           onChange={e => updateField(idx, 'required', e.target.checked)}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                         />
                       </td>
                     </tr>
@@ -572,7 +572,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
             <button
               onClick={() => handleSave(4)}
               disabled={saving}
-              className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              className="px-5 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save domain →'}
             </button>
@@ -594,7 +594,7 @@ function DomainWizard({ onClose }: { onClose: () => void }) {
           <div className="pt-2">
             <button
               onClick={onClose}
-              className="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
+              className="px-6 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700"
             >
               View domains
             </button>

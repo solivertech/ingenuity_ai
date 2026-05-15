@@ -1,0 +1,14 @@
+<svg width="480" height="80" viewBox="0 0 480 80" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>IngenuityAI wordmark — light version</title>
+  <desc>IngenuityAI horizontal logo lockup for use on light backgrounds. Rotor mark in teal followed by Ingenuity in dark ink and AI in teal.</desc>
+  <g transform="translate(36,40)">
+    <path fill="#0A5C45" d="M0,0 C-5,-20 -2,-48 9,-62 C15,-71 22,-73 25,-65 C28,-53 20,-30 8,-8 Z"/>
+    <path fill="#1DB88E" d="M0,0 C20,-5 48,-2 62,9 C71,15 73,22 65,25 C53,28 30,20 8,8 Z"/>
+    <path fill="#0F8F6E" d="M0,0 C5,20 2,48 -9,62 C-15,71 -22,73 -25,65 C-28,53 -20,30 -8,8 Z" opacity="0.85"/>
+    <path fill="#5DCAA5" d="M0,0 C-20,5 -48,2 -62,-9 C-71,-15 -73,-22 -65,-25 C-53,-28 -30,-20 -8,-8 Z" opacity="0.7"/>
+    <circle fill="#063D2E" cx="0" cy="0" r="8"/>
+    <circle fill="#3DC49A" cx="0" cy="0" r="4"/>
+    <circle fill="#E8FBF5" cx="0" cy="0" r="1.4"/>
+  </g>
+  <text x="80" y="50" font-family="-apple-system,'Helvetica Neue',Arial,sans-serif" font-size="34" font-weight="300" fill="#111110" letter-spacing="-0.8">Ingenuity<tspan font-weight="600" fill="#0F8F6E">AI</tspan></text>
+</svg>

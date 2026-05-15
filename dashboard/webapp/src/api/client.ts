@@ -46,7 +46,7 @@ export type Settings = Record<string, unknown>
 
 // ── Token storage ─────────────────────────────────────────────────────────────
 
-const TOKEN_KEY = 'autospy_portal_token'
+const TOKEN_KEY = 'ingenuityai_portal_token'
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)

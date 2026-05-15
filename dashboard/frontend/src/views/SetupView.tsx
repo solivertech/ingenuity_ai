@@ -80,7 +80,7 @@ function ActionCard({ name, info }: ActionCardProps) {
       <button
         onClick={() => runSse('/setup/install-playwright')}
         disabled={running}
-        className="mt-2 px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+        className="mt-2 px-3 py-1 text-xs bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50"
       >
         {running ? 'Installing…' : 'Install Chromium'}
       </button>
@@ -91,7 +91,7 @@ function ActionCard({ name, info }: ActionCardProps) {
       <button
         onClick={() => runSse('/setup/gmail-oauth')}
         disabled={running}
-        className="mt-2 px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+        className="mt-2 px-3 py-1 text-xs bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50"
       >
         {running ? 'Running…' : 'Run OAuth setup'}
       </button>

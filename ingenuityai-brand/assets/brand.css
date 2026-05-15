@@ -1,0 +1,246 @@
+/* IngenuityAI — Brand CSS Variables
+   Import this file in your global stylesheet.
+   Usage: color: var(--brand-primary); */
+
+:root {
+  /* ── Teal ramp ─────────────────────────────────── */
+  --teal-900: #04342C;
+  --teal-800: #085041;
+  --teal-700: #0A5C45;
+  --teal-600: #0F6E56;
+  --teal-500: #0F8F6E;   /* brand primary */
+  --teal-400: #1DB88E;   /* accent / AI suffix */
+  --teal-300: #3DC49A;
+  --teal-200: #5DCAA5;
+  --teal-100: #9FE1CB;
+  --teal-50:  #E1F5EE;   /* wash / tag backgrounds */
+
+  /* ── Brand aliases ─────────────────────────────── */
+  --brand-dark:         #063D2E;   /* primary dark, icon bg */
+  --brand-primary:      #0F8F6E;   /* buttons, links, focus */
+  --brand-accent:       #1DB88E;   /* AI suffix, active states */
+  --brand-accent-light: #5DCAA5;   /* highlights, fills */
+  --brand-wash:         #E1F5EE;   /* tag backgrounds, info surfaces */
+
+  /* ── Neutrals ───────────────────────────────────── */
+  --ink:   #111110;   /* primary text */
+  --slate: #444441;   /* secondary text */
+  --muted: #888780;   /* placeholder, labels */
+  --stone: #F1EFE8;   /* surface, backgrounds */
+  --white: #ffffff;
+
+  /* ── Semantic ───────────────────────────────────── */
+  --color-success: #0F8F6E;
+  --color-warning: #EF9F27;
+  --color-danger:  #E24B4A;
+  --color-info:    #185FA5;
+
+  --color-success-bg: #E1F5EE;
+  --color-warning-bg: #FAEEDA;
+  --color-danger-bg:  #FCEBEB;
+  --color-info-bg:    #E6F1FB;
+
+  --color-success-text: #085041;
+  --color-warning-text: #633806;
+  --color-danger-text:  #791F1F;
+  --color-info-text:    #0C447C;
+
+  /* ── Typography ─────────────────────────────────── */
+  --font-sans: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+
+  --text-display: 52px;
+  --text-h1:      32px;
+  --text-h2:      22px;
+  --text-h3:      17px;
+  --text-body:    15px;
+  --text-label:   11px;
+  --text-code:    13px;
+
+  --weight-light:  300;
+  --weight-normal: 400;
+  --weight-medium: 500;
+
+  --tracking-tight:  -1.5px;
+  --tracking-normal: 0;
+  --tracking-wide:   0.08em;
+
+  /* ── Spacing ─────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-4:  16px;
+  --space-6:  24px;
+  --space-12: 48px;
+  --space-20: 80px;
+
+  /* ── Border radius ───────────────────────────────── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 9999px;
+
+  /* ── Borders ─────────────────────────────────────── */
+  --border-thin:     0.5px solid #D3D1C7;
+  --border-medium:   1px solid #B4B2A9;
+  --border-accent:   1.5px solid #0F8F6E;
+  --border-featured: 2px solid #0F8F6E;
+
+  /* ── Focus ring ──────────────────────────────────── */
+  --focus-ring: 0 0 0 3px rgba(15, 143, 110, 0.25);
+}
+
+/* ── Base resets ──────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  font-weight: var(--weight-normal);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography helpers ───────────────────────────── */
+.text-display {
+  font-size: var(--text-display);
+  font-weight: var(--weight-light);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+}
+
+.text-h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--weight-normal);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.text-h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+}
+
+.text-h3 {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+}
+
+.text-label {
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.text-muted   { color: var(--muted); }
+.text-primary { color: var(--brand-primary); }
+.text-accent  { color: var(--brand-accent); }
+
+/* ── Button base ──────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  text-decoration: none;
+  border: none;
+}
+.btn:active { transform: scale(0.98); }
+
+.btn-primary {
+  background: var(--brand-dark);
+  color: var(--teal-50);
+}
+.btn-primary:hover { opacity: 0.85; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--brand-primary);
+  border: 1.5px solid var(--brand-primary);
+}
+.btn-outline:hover { background: var(--brand-wash); }
+
+.btn-ghost {
+  background: var(--stone);
+  color: var(--slate);
+  border: 0.5px solid #D3D1C7;
+}
+.btn-ghost:hover { background: #E8E6DF; }
+
+/* ── Status pills ─────────────────────────────────── */
+.pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.03em;
+}
+.pill-active  { background: var(--color-success-bg); color: var(--color-success-text); }
+.pill-paused  { background: var(--color-warning-bg); color: var(--color-warning-text); }
+.pill-error   { background: var(--color-danger-bg);  color: var(--color-danger-text); }
+.pill-neutral { background: var(--stone); color: var(--slate); border: 0.5px solid #D3D1C7; }
+
+/* ── Card ─────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border: var(--border-thin);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.card-surface {
+  background: var(--stone);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+/* ── Input ────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+textarea,
+select {
+  width: 100%;
+  padding: 11px 16px;
+  border: var(--border-medium);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--brand-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* ── Section label ────────────────────────────────── */
+.section-label {
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  padding-bottom: 10px;
+  border-bottom: var(--border-thin);
+}

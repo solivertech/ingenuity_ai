@@ -1,3 +1,5 @@
+﻿@import '../../../ingenuityai-brand/assets/brand.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,16 +10,16 @@ html, body, #root {
   padding: 0;
 }
 
-/* ── Dark mode overrides ────────────────────────────────────────────────────
+/* â”€â”€ Dark mode overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Applied when <html class="dark"> is set by useTheme().
    Overrides the Tailwind gray palette used throughout the app.
    Specificity (.dark .class) beats Tailwind's single-class selectors
    without needing !important.
-   ────────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 /* Backgrounds */
-.dark .bg-white       { background-color: #1e293b; } /* slate-800  — cards */
-.dark .bg-gray-50     { background-color: #0f172a; } /* slate-900  — page / table headers */
+.dark .bg-white       { background-color: #1e293b; } /* slate-800  â€” cards */
+.dark .bg-gray-50     { background-color: #0f172a; } /* slate-900  â€” page / table headers */
 .dark .bg-gray-100    { background-color: #1e293b; } /* slate-800 */
 
 /* Borders */
@@ -32,7 +34,7 @@ html, body, #root {
 .dark .text-gray-700  { color: #cbd5e1; } /* slate-300 */
 .dark .text-gray-600  { color: #94a3b8; } /* slate-400 */
 .dark .text-gray-500  { color: #94a3b8; } /* slate-400 */
-.dark .text-gray-400  { color: #94a3b8; } /* slate-400 — was slate-600, too low contrast */
+.dark .text-gray-400  { color: #94a3b8; } /* slate-400 â€” was slate-600, too low contrast */
 .dark .text-gray-300  { color: #334155; } /* slate-700 */
 
 /* Hover backgrounds */
@@ -43,7 +45,7 @@ html, body, #root {
 .dark .divide-gray-50  > * + * { border-color: #1e293b; }
 .dark .divide-gray-100 > * + * { border-color: #1e293b; }
 
-/* Form inputs — give them a dark bg, light text, and a visible border */
+/* Form inputs â€” give them a dark bg, light text, and a visible border */
 .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .dark textarea,
 .dark select {
@@ -56,9 +58,9 @@ html, body, #root {
   color: #64748b;
 }
 
-/* Status / alert backgrounds — desaturate to avoid eye-searing blobs */
-.dark .bg-indigo-50   { background-color: rgba(99,  102, 241, 0.15); }
-.dark .text-indigo-700 { color: #a5b4fc; } /* indigo-300 */
+/* Status / alert backgrounds â€” desaturate to avoid eye-searing blobs */
+.dark .bg-brand-50   { background-color: rgba(15, 143, 110, 0.15); }
+.dark .text-brand-700 { color: #3DC49A; } /* brand-300 */
 .dark .bg-amber-50    { background-color: rgba(245, 158,  11, 0.15); }
 .dark .text-amber-800  { color: #fcd34d; }
 .dark .bg-red-50      { background-color: rgba(239,  68,  68, 0.15); }

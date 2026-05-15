@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import type { Profile, DocFile } from '../api/client'
 
 interface Props {
@@ -26,11 +26,11 @@ function TagInput({ values, onChange, type = 'text', placeholder }: {
     setDraft('')
   }
   return (
-    <div className="flex flex-wrap gap-1 min-h-[36px] border border-gray-300 rounded-md px-2 py-1 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+    <div className="flex flex-wrap gap-1 min-h-[36px] border border-gray-300 rounded-md px-2 py-1 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500">
       {values.map(v => (
-        <span key={v} className="inline-flex items-center gap-1 bg-indigo-100 text-indigo-800 text-xs rounded px-2 py-0.5">
+        <span key={v} className="inline-flex items-center gap-1 bg-brand-100 text-brand-800 text-xs rounded px-2 py-0.5">
           {v}
-          <button type="button" onClick={() => onChange(values.filter(x => x !== v))} className="hover:text-red-600">×</button>
+          <button type="button" onClick={() => onChange(values.filter(x => x !== v))} className="hover:text-red-600">Ã—</button>
         </span>
       ))}
       <input
@@ -54,7 +54,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
   )
 }
 
-const inputCls = 'block w-full rounded-md border-gray-300 border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
+const inputCls = 'block w-full rounded-md border-gray-300 border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500'
 
 export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
   const isEdit = Boolean(initial)
@@ -119,7 +119,7 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
           <h2 className="text-lg font-semibold text-gray-900">
             {isEdit ? `Edit: ${initial?.label}` : 'New Profile'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">Ã—</button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
@@ -149,11 +149,11 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
                   <input className={`${inputCls} flex-1`} placeholder="Make" value={v[0]} onChange={e => setVehicle(i, 0, e.target.value)} />
                   <input className={`${inputCls} flex-1`} placeholder="Model" value={v[1]} onChange={e => setVehicle(i, 1, e.target.value)} />
                   <button type="button" onClick={() => removeVehicle(i)} disabled={form.vehicles.length === 1}
-                    className="text-gray-400 hover:text-red-500 disabled:opacity-30 px-1">✕</button>
+                    className="text-gray-400 hover:text-red-500 disabled:opacity-30 px-1">âœ•</button>
                 </div>
               ))}
             </div>
-            <button type="button" onClick={addVehicle} className="mt-2 text-sm text-indigo-600 hover:underline">+ Add vehicle</button>
+            <button type="button" onClick={addVehicle} className="mt-2 text-sm text-brand-600 hover:underline">+ Add vehicle</button>
           </div>
 
           {/* Fuel types */}
@@ -166,7 +166,7 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
                   <button key={f} type="button"
                     onClick={() => isAll ? toggleAll() : toggleFuel(f)}
                     className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                      active ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+                      active ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-600 border-gray-300 hover:border-brand-400'
                     }`}
                   >{f}</button>
                 )
@@ -205,14 +205,14 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
 
           {/* Model preference */}
           {form.model_preference.length > 0 && (
-            <Field label="Model preference" hint="Reorder with arrows: best → worst">
+            <Field label="Model preference" hint="Reorder with arrows: best â†’ worst">
               <div className="space-y-1">
                 {form.model_preference.map((m, i) => (
                   <div key={m} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1 text-sm">
                     <span className="text-gray-400 w-5 text-center text-xs">{i + 1}</span>
                     <span className="flex-1 font-medium">{m}</span>
-                    <button type="button" onClick={() => moveModel(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-700 disabled:opacity-30">↑</button>
-                    <button type="button" onClick={() => moveModel(i, 1)} disabled={i === form.model_preference.length - 1} className="text-gray-400 hover:text-gray-700 disabled:opacity-30">↓</button>
+                    <button type="button" onClick={() => moveModel(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-700 disabled:opacity-30">â†‘</button>
+                    <button type="button" onClick={() => moveModel(i, 1)} disabled={i === form.model_preference.length - 1} className="text-gray-400 hover:text-gray-700 disabled:opacity-30">â†“</button>
                   </div>
                 ))}
               </div>
@@ -284,8 +284,8 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
 
           <div className="pt-2 pb-6 flex gap-3">
             <button type="submit" disabled={saving}
-              className="flex-1 bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-              {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Create profile'}
+              className="flex-1 bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
+              {saving ? 'Savingâ€¦' : isEdit ? 'Save changes' : 'Create profile'}
             </button>
             <button type="button" onClick={onClose}
               className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">

@@ -4,7 +4,7 @@ import type { Settings } from '../api/client'
 import { useTheme } from '../hooks/useTheme'
 import type { ThemePreference } from '../hooks/useTheme'
 
-const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
+const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500'
 
 const GROUPS: { title: string; keys: (keyof Settings)[] }[] = [
   {
@@ -102,7 +102,7 @@ function FieldInput({
 
   if (BOOL_KEYS.has(k)) {
     return (
-      <label className={`inline-flex items-center gap-2 text-sm cursor-pointer ${isDirty ? 'font-medium text-indigo-700' : 'text-gray-700'}`}>
+      <label className={`inline-flex items-center gap-2 text-sm cursor-pointer ${isDirty ? 'font-medium text-brand-700' : 'text-gray-700'}`}>
         <input type="checkbox" checked={Boolean(value)} onChange={e => onChange(k, e.target.checked)} />
         {value ? 'Yes' : 'No'}
       </label>
@@ -113,7 +113,7 @@ function FieldInput({
     const listVal = Array.isArray(value) ? (value as string[]).join(', ') : String(value ?? '')
     return (
       <input
-        className={`${inputCls} ${isDirty ? 'border-indigo-400 ring-1 ring-indigo-300' : ''}`}
+        className={`${inputCls} ${isDirty ? 'border-brand-400 ring-1 ring-brand-300' : ''}`}
         value={listVal}
         placeholder="model1, model2"
         onChange={e => onChange(k, e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
@@ -125,7 +125,7 @@ function FieldInput({
     return (
       <input
         type="password"
-        className={`${inputCls} ${isDirty ? 'border-indigo-400 ring-1 ring-indigo-300' : ''}`}
+        className={`${inputCls} ${isDirty ? 'border-brand-400 ring-1 ring-brand-300' : ''}`}
         value={value === '***' ? '' : (value as string) ?? ''}
         placeholder={original === '***' ? '(set — leave blank to keep)' : 'Not set'}
         onChange={e => onChange(k, e.target.value || null)}
@@ -137,7 +137,7 @@ function FieldInput({
     return (
       <input
         type="number"
-        className={`${inputCls} ${isDirty ? 'border-indigo-400 ring-1 ring-indigo-300' : ''}`}
+        className={`${inputCls} ${isDirty ? 'border-brand-400 ring-1 ring-brand-300' : ''}`}
         value={value as number ?? ''}
         onChange={e => onChange(k, e.target.value === '' ? null : Number(e.target.value))}
       />
@@ -147,7 +147,7 @@ function FieldInput({
   return (
     <input
       type="text"
-      className={`${inputCls} ${isDirty ? 'border-indigo-400 ring-1 ring-indigo-300' : ''}`}
+      className={`${inputCls} ${isDirty ? 'border-brand-400 ring-1 ring-brand-300' : ''}`}
       value={value as string ?? ''}
       onChange={e => onChange(k, e.target.value)}
     />
@@ -155,7 +155,7 @@ function FieldInput({
 }
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; icon: string }[] = [
-  { value: 'light',  label: 'Light',  icon: '☀️' },
+  { value: 'light',  label: 'Light',  icon: '☀️' },
   { value: 'dark',   label: 'Dark',   icon: '🌙' },
   { value: 'system', label: 'System', icon: '💻' },
 ]
@@ -227,7 +227,7 @@ export function SettingsView() {
             <span className="text-xs text-amber-500">{dirtyCount} unsaved {dirtyCount === 1 ? 'change' : 'changes'}</span>
           )}
           <button onClick={handleSave} disabled={saving || !draft}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-40">
+            className="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-40">
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
@@ -257,8 +257,8 @@ export function SettingsView() {
                 onClick={() => setTheme(opt.value)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors ${
                   preference === opt.value
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-brand-400'
                 }`}
               >
                 <span>{opt.icon}</span>

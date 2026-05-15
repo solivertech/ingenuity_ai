@@ -14,7 +14,7 @@ function GenerateModal({ onClose, onSaved }: { onClose: () => void; onSaved: (fi
   const [saving, setSaving]       = useState(false)
   const [err, setErr]             = useState<string | null>(null)
 
-  const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
+  const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500'
 
   const generate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,13 +79,13 @@ function GenerateModal({ onClose, onSaved }: { onClose: () => void; onSaved: (fi
                   Buyer context <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <textarea
-                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   rows={3} placeholder="e.g. Located in Phoenix, AZ. Budget up to $30k. Prefer hybrid trims."
                   value={notes} onChange={e => setNotes(e.target.value)}
                 />
               </div>
               <button type="submit" disabled={generating}
-                className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                className="w-full bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
                 {generating ? 'Generating…' : 'Generate reference doc'}
               </button>
             </form>
@@ -97,14 +97,14 @@ function GenerateModal({ onClose, onSaved }: { onClose: () => void; onSaved: (fi
                   <input className={inputCls} value={filename} onChange={e => setFilename(e.target.value)}
                     pattern="[\w\-]+\.md" title="e.g. honda_crv.md" />
                 </div>
-                <button onClick={() => setGenerated(null)} className="mt-5 text-sm text-indigo-600 hover:underline shrink-0">
+                <button onClick={() => setGenerated(null)} className="mt-5 text-sm text-brand-600 hover:underline shrink-0">
                   Regenerate
                 </button>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Generated content (editable)</label>
                 <textarea
-                  className="w-full font-mono text-xs border border-gray-200 rounded p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full font-mono text-xs border border-gray-200 rounded p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   rows={18}
                   value={generated}
                   onChange={e => setGenerated(e.target.value)}
@@ -112,7 +112,7 @@ function GenerateModal({ onClose, onSaved }: { onClose: () => void; onSaved: (fi
               </div>
               <div className="flex gap-3">
                 <button onClick={save} disabled={saving || !filename}
-                  className="flex-1 bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                  className="flex-1 bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
                   {saving ? 'Saving…' : 'Save doc'}
                 </button>
                 <button onClick={onClose}
@@ -220,7 +220,7 @@ export function DocsView() {
             Generate with AI
           </button>
           <button onClick={startNew}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+            className="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700">
             + New doc
           </button>
         </div>
@@ -237,7 +237,7 @@ export function DocsView() {
         <div className="w-64 flex-shrink-0 bg-white border border-gray-200 rounded-lg overflow-y-auto">
           {docs.map(d => (
             <div key={d.filename}
-              className={`flex items-start justify-between px-3 py-2.5 cursor-pointer border-b border-gray-100 hover:bg-gray-50 ${selected === d.filename ? 'bg-indigo-50' : ''}`}
+              className={`flex items-start justify-between px-3 py-2.5 cursor-pointer border-b border-gray-100 hover:bg-gray-50 ${selected === d.filename ? 'bg-brand-50' : ''}`}
               onClick={() => openDoc(d.filename)}
             >
               <div className="min-w-0">
@@ -245,7 +245,7 @@ export function DocsView() {
                 <div className="text-xs text-gray-400">{(d.size_bytes / 1024).toFixed(1)} KB</div>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {d.matched_profiles.map(p => (
-                    <span key={p} className="text-xs bg-indigo-100 text-indigo-700 rounded px-1.5">{p}</span>
+                    <span key={p} className="text-xs bg-brand-100 text-brand-700 rounded px-1.5">{p}</span>
                   ))}
                 </div>
               </div>
@@ -265,7 +265,7 @@ export function DocsView() {
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 bg-gray-50">
                 {creating ? (
                   <input
-                    className="text-sm border border-gray-300 rounded px-2 py-1 w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="text-sm border border-gray-300 rounded px-2 py-1 w-48 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="filename.md"
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
@@ -278,7 +278,7 @@ export function DocsView() {
                   {saved && <span className="text-xs text-emerald-600">✓ Saved</span>}
                   {isDirty && !saved && <span className="text-xs text-amber-500">Unsaved changes</span>}
                   <button onClick={saveDoc} disabled={saving || (!creating && !isDirty) || (creating && !newName)}
-                    className="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-40">
+                    className="px-3 py-1 bg-brand-600 text-white text-sm rounded hover:bg-brand-700 disabled:opacity-40">
                     {saving ? 'Saving…' : 'Save'}
                   </button>
                 </div>

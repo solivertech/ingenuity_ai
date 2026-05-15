@@ -13,7 +13,7 @@ const EMPTY: Profile = {
   max_mileage: 80000, min_year: 2020, max_year: 2025, email_to: [],
   fuel_type_filters: [null], model_preference: [], reference_doc_path: null,
   excluded_trim_keywords: [], excluded_years: [], show_financing: true, down_payment: null,
-  email_only_on_new_or_drops: false,
+  email_only_on_new_or_drops: false, domain_id: 'carvana_suvs', filter_rules: [],
 }
 
 // Simple tag-input: Enter/comma adds, click removes
@@ -27,9 +27,9 @@ function TagInput({ values, onChange, type = 'text', placeholder }: {
     setDraft('')
   }
   return (
-    <div className="flex flex-wrap gap-1 min-h-[36px] border border-gray-300 rounded-md px-2 py-1 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+    <div className="flex flex-wrap gap-1 min-h-[36px] border border-gray-300 rounded-md px-2 py-1 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500">
       {values.map(v => (
-        <span key={v} className="inline-flex items-center gap-1 bg-indigo-100 text-indigo-800 text-xs rounded px-2 py-0.5">
+        <span key={v} className="inline-flex items-center gap-1 bg-brand-100 text-brand-800 text-xs rounded px-2 py-0.5">
           {v}
           <button type="button" onClick={() => onChange(values.filter(x => x !== v))} className="hover:text-red-600">×</button>
         </span>
@@ -55,7 +55,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
   )
 }
 
-const inputCls = 'block w-full rounded-md border-gray-300 border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
+const inputCls = 'block w-full rounded-md border-gray-300 border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500'
 
 export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
   const isEdit = Boolean(initial)
@@ -163,7 +163,7 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
                 </div>
               ))}
             </div>
-            <button type="button" onClick={addVehicle} className="mt-2 text-sm text-indigo-600 hover:underline">+ Add vehicle</button>
+            <button type="button" onClick={addVehicle} className="mt-2 text-sm text-brand-600 hover:underline">+ Add vehicle</button>
           </div>
 
           {/* Fuel types */}
@@ -176,7 +176,7 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
                   <button key={f} type="button"
                     onClick={() => isAll ? toggleAll() : toggleFuel(f)}
                     className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                      active ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+                      active ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-600 border-gray-300 hover:border-brand-400'
                     }`}
                   >{f}</button>
                 )
@@ -221,7 +221,7 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
                   <div key={m} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1 text-sm">
                     <span className="text-gray-400 w-5 text-center text-xs">{i + 1}</span>
                     <span className="flex-1 font-medium">{m}</span>
-                    <button type="button" onClick={() => moveModel(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-700 disabled:opacity-30">↑</button>
+                    <button type="button" onClick={() => moveModel(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-700 disabled:opacity-30">←</button>
                     <button type="button" onClick={() => moveModel(i, 1)} disabled={i === form.model_preference.length - 1} className="text-gray-400 hover:text-gray-700 disabled:opacity-30">↓</button>
                   </div>
                 ))}
@@ -294,7 +294,7 @@ export function ProfileForm({ initial, docs, onSave, onClose }: Props) {
 
           <div className="pt-2 pb-6 flex gap-3">
             <button type="submit" disabled={saving}
-              className="flex-1 bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+              className="flex-1 bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
               {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Create profile'}
             </button>
             <button type="button" onClick={onClose}

@@ -171,7 +171,7 @@ export function ScheduleView() {
           <button
             onClick={handleSave}
             disabled={saving || !isDirty}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-40"
+            className="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-40"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -195,7 +195,7 @@ export function ScheduleView() {
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isRunning
-              ? <><span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" /> Running…</>
+              ? <><span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" /> Running…</>
               : '▶ Run Now'
             }
           </button>
@@ -237,8 +237,8 @@ export function ScheduleView() {
         {status?.running_job && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Running now</span>
-            <span className="flex items-center gap-1.5 text-sm text-indigo-600 font-medium">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="flex items-center gap-1.5 text-sm text-brand-600 font-medium">
+              <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
               Job in progress
             </span>
           </div>
@@ -269,7 +269,7 @@ export function ScheduleView() {
             type="button"
             onClick={() => setDraftField('enabled', !draft.enabled)}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              draft.enabled ? 'bg-indigo-600' : 'bg-gray-200'
+              draft.enabled ? 'bg-brand-600' : 'bg-gray-200'
             }`}
           >
             <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
@@ -289,8 +289,8 @@ export function ScheduleView() {
                 onClick={() => { setDraftField('interval_hours', h); setCustom('') }}
                 className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                   draft.interval_hours === h && isPreset
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-brand-400'
                 }`}
               >
                 {h}h
@@ -308,12 +308,12 @@ export function ScheduleView() {
                   const n = parseInt(e.target.value, 10)
                   if (!isNaN(n) && n >= 1) setDraftField('interval_hours', n)
                 }}
-                className={`w-24 rounded-md border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                  !isPreset ? 'border-indigo-400 ring-1 ring-indigo-300' : 'border-gray-300'
+                className={`w-24 rounded-md border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                  !isPreset ? 'border-brand-400 ring-1 ring-brand-300' : 'border-gray-300'
                 }`}
               />
               {!isPreset && customHours === '' && (
-                <span className="text-xs text-indigo-600">{draft.interval_hours}h (custom)</span>
+                <span className="text-xs text-brand-600">{draft.interval_hours}h (custom)</span>
               )}
             </div>
           </div>
@@ -329,7 +329,7 @@ export function ScheduleView() {
             type="time"
             value={draft.schedule_time}
             onChange={e => setDraftField('schedule_time', e.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           {draft.schedule_time && (
             <button

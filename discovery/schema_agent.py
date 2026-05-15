@@ -158,7 +158,7 @@ def _check_robots_txt(url: str) -> None:
         resp = requests.get(
             robots_url,
             timeout=5,
-            headers={"User-Agent": "Autospy"},
+            headers={"User-Agent": "IngenuityAI"},
         )
         if resp.status_code != 200:
             log.debug("robots.txt not found at %s (HTTP %s)", robots_url, resp.status_code)

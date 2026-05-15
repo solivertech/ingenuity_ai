@@ -1,5 +1,5 @@
 """
-In-process async scheduler for Autospy.
+In-process async scheduler for IngenuityAI.
 
 Runs a background asyncio task that polls every 15 s and fires a full
 search+email job when the configured interval has elapsed.  State is held in

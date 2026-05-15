@@ -107,7 +107,7 @@ function TerminalPanel({ title, subtitle, logsUrl, running, onStart, onStop }: T
         <div className="text-center py-1 bg-gray-800 border-t border-gray-700">
           <button
             onClick={() => { setAutoScroll(true); bottomRef.current?.scrollIntoView() }}
-            className="text-xs text-indigo-400 hover:text-indigo-300"
+            className="text-xs text-brand-400 hover:text-brand-300"
           >
             ↓ Jump to bottom
           </button>
@@ -184,7 +184,7 @@ function ActionCard({ name, info }: { name: StatusKey; info: SetupStatus[StatusK
   if (name === 'playwright' && info.status !== 'ok') {
     actionBtn = (
       <button onClick={() => runSse('/setup/install-playwright')} disabled={running}
-        className="mt-2 px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">
+        className="mt-2 px-3 py-1 text-xs bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50">
         {running ? 'Installing…' : 'Install Chromium'}
       </button>
     )
@@ -192,7 +192,7 @@ function ActionCard({ name, info }: { name: StatusKey; info: SetupStatus[StatusK
   if (name === 'gmail' && info.status !== 'ok') {
     actionBtn = (
       <button onClick={() => runSse('/setup/gmail-oauth')} disabled={running}
-        className="mt-2 px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">
+        className="mt-2 px-3 py-1 text-xs bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50">
         {running ? 'Running…' : 'Run OAuth setup'}
       </button>
     )

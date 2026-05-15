@@ -1,6 +1,6 @@
-# Autospy
+# IngenuityAI
 
-![Autospy icon](autospy_icon_192.png)
+![IngenuityAI icon](autospy_icon_192.png)
 
 Scheduled Python tool that scrapes Carvana for used vehicles, scores and filters listings with AI analysis, and sends an HTML email summary with price trend charts.
 
@@ -10,16 +10,16 @@ Comes with a full **admin dashboard** — a Tauri desktop app or local web UI �
 
 ## Quickstart — already have the installer?
 
-If someone has shared the `Autospy_0.3.0_x64-setup.exe` file with you, this is all you need:
+If someone has shared the `IngenuityAI_0.3.0_x64-setup.exe` file with you, this is all you need:
 
-1. **Run the installer** — double-click `Autospy_0.3.0_x64-setup.exe` and follow the prompts.
-2. **Launch Autospy** from the Start menu or desktop shortcut. A small icon appears in your system tray (bottom-right corner of the taskbar).
+1. **Run the installer** — double-click `IngenuityAI_0.3.0_x64-setup.exe` and follow the prompts.
+2. **Launch IngenuityAI** from the Start menu or desktop shortcut. A small icon appears in your system tray (bottom-right corner of the taskbar).
 3. **Open the dashboard** — double-click the tray icon, or right-click it and choose **Open Dashboard**.
 4. **Set up Gmail** — go to the **System** page. If the Gmail row is red, click **Run OAuth setup**, sign in with your Google account, and follow the prompts. This only needs to be done once.
 5. **Create a search profile** — go to the **Profiles** page and click **+ New profile**. Fill in the vehicles you want to track, your price/mileage limits, and your email address.
 6. **Run a search** — go to the **Run** page, select your profile, and click **Run now**. Results will be emailed to you when it finishes.
 
-> **Note:** Autospy requires Python 3.11 to be installed on the machine. If the dashboard doesn't load after launching, make sure [Python 3.11](https://www.python.org/downloads/) is installed and the project dependencies have been set up (`pip install -r requirements.txt` from the project folder).
+> **Note:** IngenuityAI requires Python 3.11 to be installed on the machine. If the dashboard doesn't load after launching, make sure [Python 3.11](https://www.python.org/downloads/) is installed and the project dependencies have been set up (`pip install -r requirements.txt` from the project folder).
 
 ---
 
@@ -64,13 +64,13 @@ npx @tauri-apps/cli build --debug
 
 Installers are written to:
 ```
-dashboard/frontend/src-tauri/target/release/bundle/nsis/Autospy_0.3.0_x64-setup.exe
-dashboard/frontend/src-tauri/target/release/bundle/msi/Autospy_0.3.0_x64_en-US.msi
+dashboard/frontend/src-tauri/target/release/bundle/nsis/IngenuityAI_0.3.0_x64-setup.exe
+dashboard/frontend/src-tauri/target/release/bundle/msi/IngenuityAI_0.3.0_x64_en-US.msi
 ```
 
 Use the NSIS `.exe` for most installations. Use the debug build only if you need verbose logs to diagnose startup issues.
 
-Run the installer, then launch **Autospy** from the Start menu or desktop shortcut. The app places an icon in your system tray. From there:
+Run the installer, then launch **IngenuityAI** from the Start menu or desktop shortcut. The app places an icon in your system tray. From there:
 
 - **Double-click** the tray icon to open the dashboard window
 - **Right-click → Open Dashboard** to bring it back if minimised
@@ -273,7 +273,7 @@ GMAIL_CLIENT_ID=
 GMAIL_CLIENT_SECRET=
 GMAIL_REFRESH_TOKEN=          # written automatically by setup or the System page
 
-EMAIL_FROM_NAME=Autospy
+EMAIL_FROM_NAME=IngenuityAI
 
 # Optional — network Ollama server(s)
 # OLLAMA_NETWORK_HOST=192.168.0.100:11434

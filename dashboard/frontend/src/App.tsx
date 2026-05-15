@@ -102,9 +102,10 @@ export default function App() {
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950 overflow-hidden">
       {/* Sidebar */}
       <aside className="w-52 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col">
-        <div className="px-5 py-5 border-b border-gray-100 dark:border-slate-700">
-          <div className="text-base font-semibold text-gray-900">Autospy</div>
-          <div className="text-xs text-gray-400 mt-0.5">Admin Dashboard</div>
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+          <img src="/ingenuityai_wordmark_light.svg" alt="IngenuityAI" className="h-7 dark:hidden" />
+          <img src="/ingenuityai_wordmark_dark.svg" alt="IngenuityAI" className="h-7 hidden dark:block" />
+          <div className="text-xs text-gray-400 mt-1">Admin Dashboard</div>
         </div>
 
         <nav className="flex-1 py-3 space-y-0.5 px-2 overflow-y-auto">
@@ -115,7 +116,7 @@ export default function App() {
               className={({ isActive }) =>
                 `flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
                   isActive
-                    ? 'bg-indigo-50 text-indigo-700 font-medium'
+                    ? 'bg-brand-50 text-brand-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`
               }
@@ -159,8 +160,8 @@ export default function App() {
         {/* Status bar */}
         <footer className="border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-2 flex items-center gap-6 text-xs text-gray-400">
           {activeJob ? (
-            <span className="flex items-center gap-1.5 text-indigo-600 font-medium">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="flex items-center gap-1.5 text-brand-600 font-medium">
+              <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
               Job running…
             </span>
           ) : (

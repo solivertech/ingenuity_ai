@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { api, type Profile, type DocFile } from '../api/client'
 import { useAuth } from '../App'
 import { ProfileForm } from '../components/ProfileForm'
@@ -9,11 +9,11 @@ function Err({ msg }: { msg: string }) {
   return <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">{msg}</div>
 }
 
-const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
+const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500'
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Profile tab — edit own profile
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Profile tab â€” edit own profile
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function ProfileTab({ docs }: { docs: DocFile[] }) {
   const { } = useAuth()
@@ -42,7 +42,7 @@ function ProfileTab({ docs }: { docs: DocFile[] }) {
     load()
   }
 
-  if (loading) return <div className="text-sm text-gray-400 py-8 text-center">Loading your profile…</div>
+  if (loading) return <div className="text-sm text-gray-400 py-8 text-center">Loading your profileâ€¦</div>
 
   if (!profile) {
     return (
@@ -75,7 +75,7 @@ function ProfileTab({ docs }: { docs: DocFile[] }) {
             <p className="text-xs font-mono text-gray-400 mt-0.5">{profile.profile_id}</p>
           </div>
           <button onClick={() => setEditing(true)}
-            className="px-3 py-1.5 text-sm text-indigo-600 border border-indigo-300 rounded-md hover:bg-indigo-50">
+            className="px-3 py-1.5 text-sm text-brand-600 border border-brand-300 rounded-md hover:bg-brand-50">
             Edit profile
           </button>
         </div>
@@ -101,7 +101,7 @@ function ProfileTab({ docs }: { docs: DocFile[] }) {
           </div>
           <div>
             <dt className="text-xs text-gray-400 font-medium uppercase tracking-wide">Year range</dt>
-            <dd className="text-gray-800 mt-0.5">{profile.min_year}–{profile.max_year}</dd>
+            <dd className="text-gray-800 mt-0.5">{profile.min_year}â€“{profile.max_year}</dd>
           </div>
           <div>
             <dt className="text-xs text-gray-400 font-medium uppercase tracking-wide">Email alerts</dt>
@@ -111,7 +111,7 @@ function ProfileTab({ docs }: { docs: DocFile[] }) {
           </div>
           <div className="col-span-2">
             <dt className="text-xs text-gray-400 font-medium uppercase tracking-wide">Email recipients</dt>
-            <dd className="text-gray-800 mt-0.5">{profile.email_to.join(', ') || '—'}</dd>
+            <dd className="text-gray-800 mt-0.5">{profile.email_to.join(', ') || 'â€”'}</dd>
           </div>
           {profile.reference_doc_path && (
             <div className="col-span-2">
@@ -146,9 +146,9 @@ function ProfileTab({ docs }: { docs: DocFile[] }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Docs tab — view docs relevant to their profile's vehicles + generate new
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Docs tab â€” view docs relevant to their profile's vehicles + generate new
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function DocsTab() {
   const { user } = useAuth()
@@ -181,7 +181,7 @@ function DocsTab() {
     catch (e) { setErr(e instanceof Error ? e.message : 'Save failed') }
   }
 
-  if (loading) return <div className="text-sm text-gray-400 py-8 text-center">Loading…</div>
+  if (loading) return <div className="text-sm text-gray-400 py-8 text-center">Loadingâ€¦</div>
 
   // Highlight docs that match their profile's vehicles
   const matchedDocNames = new Set(
@@ -197,7 +197,7 @@ function DocsTab() {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-base font-semibold text-gray-800">Vehicle Reference Docs</h2>
         <button onClick={() => setShowGenerator(true)}
-          className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
+          className="px-3 py-1.5 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">
           + Generate new doc
         </button>
       </div>
@@ -205,15 +205,15 @@ function DocsTab() {
       {relevantDocs.length > 0 && (
         <div className="mb-6">
           <p className="text-xs text-gray-400 mb-2 uppercase font-medium tracking-wide">Matched to your profile</p>
-          <div className="divide-y divide-gray-100 border border-indigo-200 rounded-lg overflow-hidden">
+          <div className="divide-y divide-gray-100 border border-brand-200 rounded-lg overflow-hidden">
             {relevantDocs.map(d => (
-              <div key={d.filename} className="flex items-center gap-4 px-4 py-3 bg-indigo-50/40 hover:bg-indigo-50">
+              <div key={d.filename} className="flex items-center gap-4 px-4 py-3 bg-brand-50/40 hover:bg-brand-50">
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm text-gray-900 font-mono">{d.filename}</div>
                   <div className="text-xs text-gray-400 mt-0.5">{(d.size_bytes / 1024).toFixed(1)} KB</div>
                 </div>
                 <button onClick={() => openDoc(d.filename)}
-                  className="text-xs px-2.5 py-1 text-indigo-600 border border-indigo-300 rounded hover:bg-indigo-50">
+                  className="text-xs px-2.5 py-1 text-brand-600 border border-brand-300 rounded hover:bg-brand-50">
                   View/Edit
                 </button>
               </div>
@@ -256,17 +256,17 @@ function DocsTab() {
           <div className="relative ml-auto w-full max-w-3xl bg-white h-full overflow-y-auto shadow-xl z-50 flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h2 className="text-base font-semibold text-gray-900 font-mono">{viewing.filename}</h2>
-              <button onClick={() => setViewing(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <button onClick={() => setViewing(null)} className="text-gray-400 hover:text-gray-600 text-xl">Ã—</button>
             </div>
             <div className="flex-1 p-4">
               <textarea
-                className="w-full h-full min-h-[600px] font-mono text-xs border border-gray-200 rounded p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                className="w-full h-full min-h-[600px] font-mono text-xs border border-gray-200 rounded p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                 value={viewing.content}
                 onChange={e => setViewing(v => v ? { ...v, content: e.target.value } : v)}
               />
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex gap-3">
-              <button onClick={saveDoc} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">Save</button>
+              <button onClick={saveDoc} className="px-4 py-2 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">Save</button>
               <button onClick={() => setViewing(null)} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
             </div>
           </div>
@@ -328,7 +328,7 @@ function UserGeneratorModal({ profile, onClose, onSaved }: {
       <div className="relative ml-auto w-full max-w-2xl bg-white h-full overflow-y-auto shadow-xl z-50 flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-base font-semibold text-gray-900">Generate Vehicle Reference Doc</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">Ã—</button>
         </div>
 
         <div className="flex-1 p-6 space-y-4">
@@ -346,7 +346,7 @@ function UserGeneratorModal({ profile, onClose, onSaved }: {
                     {profile.vehicles.map((v, i) => (
                       <button key={i} type="button"
                         onClick={() => { setMake(v[0]); setModel(v[1]) }}
-                        className="text-xs px-2.5 py-1 border border-gray-300 rounded hover:border-indigo-400 hover:bg-indigo-50">
+                        className="text-xs px-2.5 py-1 border border-gray-300 rounded hover:border-brand-400 hover:bg-brand-50">
                         {v[0]} {v[1]}
                       </button>
                     ))}
@@ -374,14 +374,14 @@ function UserGeneratorModal({ profile, onClose, onSaved }: {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Buyer context <span className="text-gray-400 font-normal">(optional)</span></label>
                 <textarea
-                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   rows={3} placeholder="e.g. Located in Phoenix, AZ. Budget up to $30k. Prefer hybrid trims."
                   value={notes} onChange={e => setNotes(e.target.value)}
                 />
               </div>
               <button type="submit" disabled={generating}
-                className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-                {generating ? 'Generating with Claude…' : 'Generate reference doc'}
+                className="w-full bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
+                {generating ? 'Generating with Claudeâ€¦' : 'Generate reference doc'}
               </button>
             </form>
           ) : (
@@ -392,14 +392,14 @@ function UserGeneratorModal({ profile, onClose, onSaved }: {
                   <input className={inputCls} value={filename} onChange={e => setFilename(e.target.value)}
                     pattern="[\w\-]+\.md" title="e.g. honda_crv.md" />
                 </div>
-                <button onClick={() => setGenerated(null)} className="mt-5 text-sm text-indigo-600 hover:underline shrink-0">
+                <button onClick={() => setGenerated(null)} className="mt-5 text-sm text-brand-600 hover:underline shrink-0">
                   Regenerate
                 </button>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Generated content (editable before saving)</label>
                 <textarea
-                  className="w-full font-mono text-xs border border-gray-200 rounded p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full font-mono text-xs border border-gray-200 rounded p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   rows={20}
                   value={generated}
                   onChange={e => setGenerated(e.target.value)}
@@ -407,8 +407,8 @@ function UserGeneratorModal({ profile, onClose, onSaved }: {
               </div>
               <div className="flex gap-3">
                 <button onClick={save} disabled={saving}
-                  className="flex-1 bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-                  {saving ? 'Saving…' : 'Save doc'}
+                  className="flex-1 bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
+                  {saving ? 'Savingâ€¦' : 'Save doc'}
                 </button>
                 <button onClick={onClose}
                   className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
@@ -423,9 +423,9 @@ function UserGeneratorModal({ profile, onClose, onSaved }: {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Feedback tab
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const CATEGORIES = ['Bug Report', 'Feature Request', 'General', 'Other'] as const
 
@@ -442,7 +442,7 @@ function StarRating({ value, onChange }: { value: number | null; onChange: (v: n
           onMouseLeave={() => setHovered(null)}
           className="text-2xl focus:outline-none transition-colors"
         >
-          <span className={(hovered ?? value ?? 0) >= n ? 'text-amber-400' : 'text-gray-300'}>★</span>
+          <span className={(hovered ?? value ?? 0) >= n ? 'text-amber-400' : 'text-gray-300'}>â˜…</span>
         </button>
       ))}
       {value && (
@@ -481,11 +481,11 @@ function FeedbackTab() {
   if (success) {
     return (
       <div className="max-w-lg py-16 text-center mx-auto">
-        <div className="text-5xl mb-4">🎉</div>
+        <div className="text-5xl mb-4">ðŸŽ‰</div>
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Thanks for the feedback!</h2>
         <p className="text-sm text-gray-500 mb-6">It's been sent directly to the team.</p>
         <button onClick={() => setSuccess(false)}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
+          className="px-4 py-2 bg-brand-600 text-white text-sm rounded-md hover:bg-brand-700">
           Submit more feedback
         </button>
       </div>
@@ -497,7 +497,7 @@ function FeedbackTab() {
       <div className="mb-6">
         <h2 className="text-base font-semibold text-gray-900">Beta Feedback</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Found a bug? Have an idea? We'd love to hear it — this goes straight to the developer.
+          Found a bug? Have an idea? We'd love to hear it â€” this goes straight to the developer.
         </p>
       </div>
 
@@ -512,8 +512,8 @@ function FeedbackTab() {
                 onClick={() => setCategory(c)}
                 className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
                   category === c
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'text-gray-600 border-gray-300 hover:border-brand-400 hover:text-brand-600'
                 }`}>
                 {c}
               </button>
@@ -534,13 +534,13 @@ function FeedbackTab() {
             required
             minLength={5}
             rows={5}
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             placeholder={
               category === 'Bug Report'
-                ? "Describe what happened and how to reproduce it…"
+                ? "Describe what happened and how to reproduce itâ€¦"
                 : category === 'Feature Request'
-                ? "Describe the feature and why it would help you…"
-                : "Tell us what's on your mind…"
+                ? "Describe the feature and why it would help youâ€¦"
+                : "Tell us what's on your mindâ€¦"
             }
             value={message}
             onChange={e => setMessage(e.target.value)}
@@ -549,17 +549,17 @@ function FeedbackTab() {
         </div>
 
         <button type="submit" disabled={submitting || message.trim().length < 5}
-          className="w-full bg-indigo-600 text-white rounded-md py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-          {submitting ? 'Sending…' : 'Send feedback'}
+          className="w-full bg-brand-600 text-white rounded-md py-2.5 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 transition-colors">
+          {submitting ? 'Sendingâ€¦' : 'Send feedback'}
         </button>
       </form>
     </div>
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // User page shell
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export default function UserPage() {
   const { user, logout } = useAuth()
@@ -576,8 +576,8 @@ export default function UserPage() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <img src={`${import.meta.env.BASE_URL}autospy-logo.png`} alt="Autospy" className="w-7 h-7" />
-            <span className="font-semibold text-gray-900 text-sm">Autospy</span>
+            <img src={`${import.meta.env.BASE_URL}ingenuityai_icon_contained.svg`} alt="IngenuityAI" className="w-7 h-7" />
+            <span className="font-semibold text-gray-900 text-sm">IngenuityAI</span>
           </div>
           <div className="flex-1" />
           <span className="text-sm text-gray-500">{user?.username}</span>
@@ -595,7 +595,7 @@ export default function UserPage() {
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                 tab === t
-                  ? 'border-indigo-600 text-indigo-600'
+                  ? 'border-brand-600 text-brand-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}>
               {label}

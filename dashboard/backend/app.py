@@ -1,5 +1,5 @@
 """
-FastAPI application factory for the Autospy dashboard backend.
+FastAPI application factory for the IngenuityAI dashboard backend.
 
 Dev:
     uvicorn dashboard.backend.app:app --reload --host 127.0.0.1 --port 8000
@@ -84,8 +84,8 @@ _PORTAL_DIST   = Path(__file__).parent.parent / "portal-dist"
 
 def create_app() -> FastAPI:
     application = FastAPI(
-        title="Autospy Dashboard",
-        description="Admin dashboard API for Autospy.",
+        title="IngenuityAI Dashboard",
+        description="Admin dashboard API for IngenuityAI.",
         version="0.1.0",
         lifespan=_lifespan,
         # Move built-in Swagger UI away from /docs so the vehicle reference
