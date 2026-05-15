@@ -1,5 +1,5 @@
 """
-Vehicle reference docs router — CRUD for vehicle_reference/*.md files.
+Reference docs router — CRUD for *.md files in the configured reference_data directory.
 """
 
 import re
@@ -20,7 +20,7 @@ _SAFE_FILENAME_RE = re.compile(r"^[\w\-]+\.md$")
 
 
 def _docs_dir() -> Path:
-    """Resolved path to the vehicle_reference directory (from live config)."""
+    """Resolved path to the reference docs directory (from live config)."""
     return Path(config.VEHICLE_REFERENCE_DIR)
 
 
@@ -58,20 +58,24 @@ class DocContent(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    make: str
-    model: str
-    year_start: int
-    year_end: int
-    notes: str = ""
+    topic:       str
+    description: str                  = ""
+    domain_id:   str | None           = None
+    extra:       dict                 = {}
 
 
 # Register before /{filename} so the literal path wins.
 @router.post("/generate")
 async def generate_doc(body: GenerateRequest):
-    """Use Cerebras to generate a vehicle reference markdown document."""
-    from dashboard.backend.doc_generator import generate_vehicle_doc
+    """Use AI to generate a reference markdown document."""
+    from dashboard.backend.doc_generator import generate_doc
     try:
-        content = generate_vehicle_doc(body.make.strip(), body.model.strip(), body.year_start, body.year_end, body.notes)
+        content = generate_doc(
+            topic=body.topic.strip(),
+            description=body.description,
+            domain_id=body.domain_id,
+            extra=body.extra,
+        )
         return {"content": content}
     except ValueError as exc:
         raise HTTPException(503, str(exc))
@@ -81,7 +85,7 @@ async def generate_doc(body: GenerateRequest):
 
 @router.get("")
 def list_docs():
-    """List all .md files in vehicle_reference/."""
+    """List all .md files in the reference docs directory."""
     docs_dir = _docs_dir()
     if not docs_dir.is_dir():
         return []

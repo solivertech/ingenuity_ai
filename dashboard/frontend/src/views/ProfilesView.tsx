@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { Profile, DocFile } from '../api/client'
+import { BUILTIN_DOMAINS } from '../api/client'
 import { ProfileForm } from '../components/ProfileForm'
+
+const _BUILTIN_DOMAIN_TYPES: Record<string, string> = Object.fromEntries(
+  BUILTIN_DOMAINS.map(d => [d.domain_id, d.domain_type])
+)
+const isProfileAutomotive = (p: Profile) =>
+  (_BUILTIN_DOMAIN_TYPES[p.domain_id] ?? 'generic') === 'automotive'
 
 export function ProfilesView() {
   const [profiles, setProfiles]   = useState<Profile[]>([])
@@ -66,7 +73,7 @@ export function ProfilesView() {
                 <div className="flex items-center gap-2 mt-0.5">
                   <code className="text-xs text-gray-400">{p.profile_id}</code>
                   <span className="text-xs px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full">
-                    {p.domain_id ?? 'carvana_suvs'}
+                    {p.domain_id || 'carvana_suvs'}
                   </span>
                 </div>
               </div>
@@ -87,22 +94,30 @@ export function ProfilesView() {
             </div>
 
             <div className="mt-3 space-y-1.5 text-sm text-gray-600">
-              <div>
-                <span className="font-medium">Vehicles: </span>
-                {p.vehicles.map(v => v.join(' ')).join(', ')}
-              </div>
-              <div className="flex gap-4">
-                <span><span className="font-medium">Max price: </span>{p.max_price ? `$${p.max_price.toLocaleString()}` : 'No limit'}</span>
-                <span><span className="font-medium">Max miles: </span>{p.max_mileage.toLocaleString()}</span>
-              </div>
-              <div>
-                <span className="font-medium">Years: </span>{p.min_year}–{p.max_year}
-                {p.excluded_years.length > 0 && ` (excl. ${p.excluded_years.join(', ')})`}
-              </div>
-              <div>
-                <span className="font-medium">Fuel: </span>
-                {p.fuel_type_filters.map(f => f ?? 'All').join(', ')}
-              </div>
+              {isProfileAutomotive(p) ? (
+                <>
+                  <div>
+                    <span className="font-medium">Vehicles: </span>
+                    {p.vehicles.map(v => v.join(' ')).join(', ')}
+                  </div>
+                  <div className="flex gap-4">
+                    <span><span className="font-medium">Max price: </span>{p.max_price ? `$${p.max_price.toLocaleString()}` : 'No limit'}</span>
+                    <span><span className="font-medium">Max miles: </span>{p.max_mileage.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Years: </span>{p.min_year}–{p.max_year}
+                    {p.excluded_years.length > 0 && ` (excl. ${p.excluded_years.join(', ')})`}
+                  </div>
+                  <div>
+                    <span className="font-medium">Fuel: </span>
+                    {p.fuel_type_filters.map(f => f ?? 'All').join(', ')}
+                  </div>
+                </>
+              ) : (
+                <div className="flex gap-4">
+                  <span><span className="font-medium">Max price: </span>{p.max_price ? `$${p.max_price.toLocaleString()}` : 'No limit'}</span>
+                </div>
+              )}
               <div>
                 <span className="font-medium">Recipients: </span>
                 {p.email_to.join(', ')}

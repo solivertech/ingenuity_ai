@@ -89,20 +89,33 @@ export interface DocFile {
   matched_profiles: string[]
 }
 
-export interface ScheduleStatus {
+export interface DocGenerateRequest {
+  topic:       string
+  description: string
+  domain_id?:  string
+  extra?:      Record<string, unknown>
+}
+
+export interface ScheduleEntry {
+  id:             string
+  label:          string
   enabled:        boolean
   interval_hours: number
   schedule_time:  string
   profile_ids:    string[]
-  next_run_at:    string | null
-  last_run_at:    string | null
-  last_job_id:    string | null
-  last_status:    string | null
-  running_job:    { job_id: string; status: string; started_at: string } | null
-  task_alive:     boolean
 }
 
-export interface ScheduleRequest {
+export interface ScheduleEntryStatus extends ScheduleEntry {
+  next_run_at: string | null
+  last_run_at: string | null
+  last_job_id: string | null
+  last_status: string | null
+  running_job: { job_id: string; status: string; started_at: string } | null
+  task_alive:  boolean
+}
+
+export interface ScheduleEntryRequest {
+  label:          string
   enabled:        boolean
   interval_hours: number
   schedule_time:  string
@@ -136,6 +149,7 @@ export interface FieldSchema {
 export interface DomainConfig {
   domain_id:              string
   display_name:           string
+  domain_type?:           string
   base_url:               string
   pagination_style:       string
   pagination_param:       string
@@ -149,6 +163,18 @@ export interface DomainConfig {
   created_at:             string
   user_request:           string
 }
+
+// Built-in domains that live in Python code rather than saved JSON configs.
+// This is the single source of truth for built-in domain metadata on the frontend.
+export interface BuiltinDomain {
+  domain_id:    string
+  display_name: string
+  domain_type:  string
+}
+
+export const BUILTIN_DOMAINS: BuiltinDomain[] = [
+  { domain_id: 'carvana_suvs', display_name: 'Carvana (Automotive)', domain_type: 'automotive' },
+]
 
 // ── Base URL detection ────────────────────────────────────────────────────────
 //
@@ -216,10 +242,13 @@ export const api = {
     resendEmail:  (profile_ids: string[])       => request<ResendResponse>('/runs/resend-email', { method: 'POST', body: JSON.stringify({ profile_ids }) }),
   },
 
-  schedule: {
-    get:    ()                       => request<ScheduleStatus>('/schedule'),
-    update: (req: ScheduleRequest)   => request<ScheduleStatus>('/schedule', { method: 'POST', body: JSON.stringify(req) }),
-    runNow: ()                       => request<{ job_id: string }>('/schedule/run-now', { method: 'POST' }),
+  schedules: {
+    list:   ()                                            => request<{ schedules: ScheduleEntryStatus[] }>('/schedules'),
+    create: (req: ScheduleEntryRequest)                   => request<ScheduleEntryStatus>('/schedules', { method: 'POST', body: JSON.stringify(req) }),
+    get:    (id: string)                                  => request<ScheduleEntryStatus>(`/schedules/${id}`),
+    update: (id: string, req: ScheduleEntryRequest)       => request<ScheduleEntryStatus>(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(req) }),
+    delete: (id: string)                                  => request<void>(`/schedules/${id}`, { method: 'DELETE' }),
+    runNow: (id: string)                                  => request<{ job_id: string }>(`/schedules/${id}/run-now`, { method: 'POST' }),
   },
 
   history: {
@@ -247,7 +276,7 @@ export const api = {
     get:      (filename: string)                                                                          => request<{ filename: string; content: string }>(`/docs/${filename}`),
     put:      (filename: string, content: string)                                                         => request<DocFile>(`/docs/${filename}`, { method: 'PUT', body: JSON.stringify({ content }) }),
     delete:   (filename: string)                                                                          => request<void>(`/docs/${filename}`, { method: 'DELETE' }),
-    generate: (make: string, model: string, yearStart: number, yearEnd: number, notes: string)            => request<{ content: string }>('/docs/generate', { method: 'POST', body: JSON.stringify({ make, model, year_start: yearStart, year_end: yearEnd, notes }) }, 120_000),
+    generate: (req: DocGenerateRequest) => request<{ content: string }>('/docs/generate', { method: 'POST', body: JSON.stringify(req) }, 120_000),
   },
 
   system: {

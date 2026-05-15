@@ -2,7 +2,7 @@
 
 ![IngenuityAI icon](autospy_icon_192.png)
 
-Scheduled Python tool that scrapes Carvana for used vehicles, scores and filters listings with AI analysis, and sends an HTML email summary with price trend charts.
+Scheduled Python tool that scrapes any website for structured listings, scores and filters them with rule-based and AI analysis, and sends an HTML email summary with price trend charts. New sites are onboarded in minutes using an AI-powered schema discovery wizard — no custom scraper code required.
 
 Comes with a full **admin dashboard** — a Tauri desktop app or local web UI — for managing search profiles, triggering runs, previewing emails, and viewing history. A separate **web portal** lets you and other users access their profiles and results from any browser, with JWT-based authentication.
 
@@ -16,7 +16,7 @@ If someone has shared the `IngenuityAI_0.3.0_x64-setup.exe` file with you, this 
 2. **Launch IngenuityAI** from the Start menu or desktop shortcut. A small icon appears in your system tray (bottom-right corner of the taskbar).
 3. **Open the dashboard** — double-click the tray icon, or right-click it and choose **Open Dashboard**.
 4. **Set up Gmail** — go to the **System** page. If the Gmail row is red, click **Run OAuth setup**, sign in with your Google account, and follow the prompts. This only needs to be done once.
-5. **Create a search profile** — go to the **Profiles** page and click **+ New profile**. Fill in the vehicles you want to track, your price/mileage limits, and your email address.
+5. **Create a search profile** — go to the **Profiles** page and click **+ New profile**. Fill in what you want to track, your filters, and your email address.
 6. **Run a search** — go to the **Run** page, select your profile, and click **Run now**. Results will be emailed to you when it finishes.
 
 > **Note:** IngenuityAI requires Python 3.11 to be installed on the machine. If the dashboard doesn't load after launching, make sure [Python 3.11](https://www.python.org/downloads/) is installed and the project dependencies have been set up (`pip install -r requirements.txt` from the project folder).
@@ -122,10 +122,11 @@ The log terminal streams live output as the job runs. When a dry run finishes, t
 
 | Option | Description |
 |---|---|
-| **Auto (Ollama → Anthropic)** | Try Ollama first, fall back to Anthropic API |
-| **Ollama** | Force Ollama only |
+| **Auto** | Try backends in order: NVIDIA NIM → Cerebras → Anthropic → Ollama |
+| **NVIDIA** | Force NVIDIA NIM only |
 | **Cerebras** | Force Cerebras API only |
 | **Anthropic** | Force Anthropic API only |
+| **Ollama** | Force network Ollama only |
 | **No LLM** | Skip AI analysis entirely |
 
 **Other options:**
@@ -141,22 +142,19 @@ The log terminal streams live output as the job runs. When a dry run finishes, t
 
 Create, edit, and delete search profiles. Each profile defines:
 
-- Which vehicles to search (one or more make/model pairs)
-- Price, mileage, and year filters
-- Fuel type (Gas, Hybrid, or all)
+- Which domain to scrape and what to search for
+- Filter rules (price, mileage, year, keywords, or any domain field)
 - Email recipients
-- Trim exclusions, model preference order
-- Whether to show estimated financing
 - Email alert mode (all runs, or only on new listings / price drops)
-- Which reference doc to feed to the LLM (auto-discover by filename, or select manually)
+- Which reference doc to feed to the LLM (matched by filename, or selected manually)
 
 ### History
 
 Shows all past runs and pricing trends.
 
-- **Metric cards** — total runs, unique VINs seen, models tracked, cheapest ever listing
+- **Metric cards** — total runs, unique listings seen, categories tracked, lowest ever price
 - **Runs table** — date, listings saved vs. found, LLM backend used, run duration
-- **Price trends** — line charts of average and minimum price per model over the last 30/60/90 days
+- **Price trends** — line charts of average and minimum price per category over the last 30/60/90 days
 
 ### Domains
 
@@ -170,15 +168,15 @@ Manage scraped domains and onboard new ones with the AI-powered discovery wizard
   4. Optionally edit display names, types, and units before saving
   5. Confirmation — the domain is saved and ready to use in profiles
 
-Once a domain is saved its `domain_id` can be set on any profile. Non-automotive domains use `filter_rules` instead of the automotive `max_price` / `max_mileage` / `min_year` / `max_year` fields.
+Once a domain is saved its `domain_id` can be set on any profile. Generic domains use `filter_rules` to express filter conditions against any field the domain exposes.
 
 ### Docs
 
-Manage the vehicle reference markdown files in `vehicle_reference/`. These files are fed to the LLM to improve analysis quality for specific models.
+Manage reference markdown files in `reference_data/`. These files are injected into the LLM prompt to provide domain context — pricing benchmarks, field definitions, evaluation criteria, known gotchas, or anything else that helps the model give better recommendations for a given search.
 
-- **Generate with AI** — fills in make, model, year range, and optional buyer context; calls Cerebras to produce a structured 5-section reference guide that you can review and edit before saving
+- **Generate with AI** — describe what you're searching for and any buyer context; Cerebras generates a structured reference guide you can review and edit before saving
 - **+ New doc** — create a blank doc and write it manually
-- Name files `make_model.md` (e.g. `honda_crv.md`) for auto-discovery
+- Name files to match your search target (e.g. `honda_crv.md`, `2br_apartments.md`) in `reference_data/` for auto-matching
 
 ### System
 
@@ -253,7 +251,7 @@ Start ngrok from the System view in the desktop dashboard, then share your confi
 
 ```bash
 git clone <repo-url>
-cd car_search
+cd ingenuity_ai
 pip install -r requirements.txt
 playwright install chromium
 ```
@@ -263,9 +261,10 @@ Or install Chromium from the **System** page in the dashboard after the backend 
 ### 2. Create your `.env` file
 
 ```dotenv
-# AI analysis (at least one required)
+# AI analysis — configure at least one; all three are enabled by default
 ANTHROPIC_API_KEY=sk-ant-...
 CEREBRAS_API_KEY=...
+NVIDIA_API_KEY=...
 
 # Email (required to send results)
 GMAIL_SENDER=you@gmail.com
@@ -297,7 +296,7 @@ Both open a browser, ask you to sign in, and write `GMAIL_REFRESH_TOKEN` to your
 
 ### 4. Create your first search profile
 
-Open the dashboard → **Profiles** → **+ New profile**. Fill in the vehicles, filters, and at least one email recipient.
+Open the dashboard → **Profiles** → **+ New profile**. Fill in the domain, filters, and at least one email recipient.
 
 Alternatively, edit `profiles.yaml` directly — see [profiles.yaml reference](#profilesyaml-reference).
 
@@ -325,6 +324,7 @@ python main.py --dry-run
 python main.py --no-llm
 
 # Force a specific LLM backend
+python main.py --backend nvidia
 python main.py --backend anthropic
 python main.py --backend ollama
 python main.py --backend cerebras
@@ -341,7 +341,7 @@ python main.py --profile my_search suv_search
 # Run on a schedule (every check_interval_hours)
 python main.py --schedule
 
-# Print run history, per-model stats, and pricing trends
+# Print run history, per-category stats, and pricing trends
 python main.py --history
 
 # Validate config and test all backends without scraping
@@ -366,15 +366,15 @@ Remove `--reload` for a stable production instance.
 Each run:
 
 1. Loads one or more **search profiles** from `profiles.yaml`
-2. Scrapes Carvana using headless Chromium across configured fuel types
-3. Deduplicates by VIN and applies per-profile filters (price, mileage, year, trim exclusions)
+2. Fetches listings from the configured domain using headless Chromium (or lighter HTTP tiers where supported)
+3. Deduplicates by listing ID and applies per-profile filter rules
 4. Scores each listing 0–100 (see [Value score](#value-score))
-5. Runs **per-make LLM analysis** — one call per make, each with its own reference doc, to prevent cross-brand terminology bleed
-6. Runs a **cross-model synthesis** LLM call to rank and recommend the top 3 picks across all makes
-7. Validates LLM output for brand-bleed errors; auto-corrects if possible
+5. Runs **per-group LLM analysis** — one call per distinct category, each with its own reference doc, to keep context focused
+6. Runs a **cross-group synthesis** LLM call to rank and recommend the top picks across all categories
+7. Validates LLM output against domain-specific terminology rules (when configured) and auto-corrects if issues are found
 8. Saves results to a timestamped CSV and SQLite history database
 9. Detects new listings and price drops since the last run
-10. Sends an HTML email with the top listings table, price trend charts, trim key, and AI analysis
+10. Sends an HTML email with the top listings table, price trend charts, and AI analysis
 
 ---
 
@@ -385,21 +385,20 @@ profiles:
   - profile_id: my_search          # unique slug — letters, numbers, underscores only
     label: "My SUV Search"         # shown in email subject and body
 
-    domain_id: carvana_suvs        # optional — defaults to carvana_suvs
-                                   # set to a discovered domain's ID for generic domains
+    domain_id: carvana_suvs        # required — use a built-in ID or one saved via the Domain Wizard
 
-    vehicles:                      # [make, model] pairs to search (automotive only)
+    vehicles:                      # [make, model] pairs (automotive domain only)
       - [Honda, CR-V]
       - [Toyota, RAV4]
 
-    max_price: 30000               # omit or null for no upper limit (automotive only)
+    max_price: 30000               # omit or null for no upper limit (automotive domain only)
     max_mileage: 80000
     min_year: 2021
     max_year: 2025
     excluded_years: [2022]         # specific years to skip within the min/max range
 
-    fuel_type_filters: [Hybrid, Gas]   # Hybrid | Gas | null (all)
-                                       # runs a separate Carvana search per type
+    fuel_type_filters: [Hybrid, Gas]   # Hybrid | Gas | null (all) — automotive domain only
+                                       # runs a separate search pass per type
 
     model_preference: [CR-V, RAV4]     # ordered best→worst; affects sort and value score
 
@@ -411,8 +410,8 @@ profiles:
     email_only_on_new_or_drops: false  # true = only email when there are new listings
                                        # or price drops vs. the previous run
 
-    reference_doc_path: null           # null = auto-discover from vehicle_reference/
-                                       # or set to ./vehicle_reference/my_doc.md
+    reference_doc_path: null           # null = auto-discover from reference_data/
+                                       # or set to ./reference_data/my_doc.md
 
     email_to:
       - you@gmail.com
@@ -441,12 +440,12 @@ Global settings are stored in `dashboard_settings.json` and editable from the da
 
 | Setting | Default | Description |
 |---|---|---|
-| `zip_code` | `85286` | Used by Carvana for shipping estimates |
+| `zip_code` | `85286` | Location used by the automotive domain for shipping estimates |
 | `down_payment` | `3000` | Default down payment for monthly payment estimates |
 | `interest_rate` | `7.5` | APR used in payment estimates |
 | `loan_term_months` | `60` | Loan term in months |
 | `check_interval_hours` | `24` | How often `--schedule` mode runs |
-| `max_pages_per_search` | `5` | Carvana result pages scraped per vehicle/fuel-type combo |
+| `max_pages_per_search` | `5` | Result pages fetched per search pass |
 | `request_delay_seconds` | `4` | Pause between page requests |
 | `page_timeout_seconds` | `30` | Playwright page load timeout |
 | `scraping_delay_ms` | `1500` | Delay (ms) between pages during AI schema discovery |
@@ -455,29 +454,36 @@ Global settings are stored in `dashboard_settings.json` and editable from the da
 | `ollama_enabled` | `false` | Include Ollama in the auto fallback chain |
 | `ollama_timeout` | `600` | Seconds before an Ollama request times out |
 | `ollama_ref_doc_max_chars` | `6000` | Truncate reference docs sent to Ollama (local models handle smaller contexts) |
+| `nvidia_enabled` | `true` | Include NVIDIA NIM as the primary backend |
+| `nvidia_model` | `meta/llama-4-maverick-17b-128e-instruct` | NVIDIA NIM model for LLM analysis |
+| `nvidia_max_tokens` | `1500` | Max tokens per NVIDIA response |
 | `anthropic_enabled` | `true` | Include Anthropic in the auto fallback chain |
 | `anthropic_model` | `claude-haiku-4-5-20251001` | Anthropic model for LLM analysis |
 | `anthropic_max_tokens` | `1500` | Max tokens per Anthropic response |
-| `cerebras_enabled` | `false` | Include Cerebras in the auto fallback chain |
-| `cerebras_model` | `gpt-oss-120b` | Cerebras model for LLM analysis and doc generation |
+| `cerebras_enabled` | `true` | Include Cerebras in the auto fallback chain |
+| `cerebras_model` | `qwen-3-235b-a22b-instruct-2507` | Cerebras model for LLM analysis and doc generation |
 | `cerebras_max_tokens` | `1500` | Max tokens per Cerebras response |
 | `ngrok_domain` | — | Your static ngrok domain for remote access |
-| `output_dir` | `./carvana_results` | Where CSVs and logs are written |
-| `db_path` | `./carvana_results/history.db` | SQLite database path |
+| `output_dir` | `./search_results` | Where CSVs and logs are written |
+| `db_path` | `./search_results/history.db` | SQLite database path |
 
 ---
 
 ## Value score
 
-Each listing is scored 0–100 before LLM analysis. Higher is better.
+Each listing is scored 0–100 before LLM analysis. Higher is better. Weights are defined per domain in `DomainConfig.scoring_weights` and can be customized for any domain.
+
+**Default weights (automotive domain):**
 
 | Component | Weight | Logic |
 |---|---|---|
-| Price vs. group average | 35 | % below average price for same make/model, capped at ±30% |
+| Price vs. group average | 35 | % below average price for same category, capped at ±30% |
 | Mileage | 25 | Inverse linear: 0 mi = 25 pts, `max_mileage` = 0 pts |
 | Age | 20 | Newer = better. `max_year` = 20 pts, `min_year` = 0 pts |
 | Hybrid bonus | 10 | +10 if `fuel_type_filters` includes Hybrid and trim qualifies |
-| Shipping penalty | 10 | 10 pts if no shipping fee; scales to 0 at $1,500 |
+| Shipping | 10 | 10 pts if no shipping fee; scales to 0 at $1,500 |
+
+Custom `scoring_weights` can be defined per domain in `DomainConfig.scoring_weights` — domains created via the wizard set their own weights based on which fields matter most.
 
 `model_preference` adds a tie-breaking sort on top of the raw score. LLM top picks are pinned to the top rows of the email table.
 
@@ -489,38 +495,33 @@ Each listing is scored 0–100 before LLM analysis. Higher is better.
 
 Backends are tried in this order when using **Auto** mode:
 
-1. **Ollama (network)** — Free and private, runs on your own server. Set `ollama_enabled: true` in Settings and `OLLAMA_NETWORK_HOST` in `.env`. If two hosts are configured the tracker routes to whichever responds faster. Only participates in auto mode when enabled.
-2. **Cerebras** — Fast cloud inference via the Cerebras API (`gpt-oss-120b`). Set `CEREBRAS_API_KEY` in `.env`. Only participates in auto mode when `cerebras_enabled: true` in Settings.
-3. **Anthropic API** — High quality, uses prompt caching for reference docs. Costs fractions of a cent per run. Enabled by default.
-4. **None** — If all configured backends fail, the run completes without AI analysis. Scoring and email still work.
+1. **NVIDIA NIM** — Fast cloud inference via the NVIDIA API. Set `NVIDIA_API_KEY` in `.env`. Enabled by default (`nvidia_enabled: true`).
+2. **Cerebras** — Fast cloud inference via the Cerebras API. Set `CEREBRAS_API_KEY` in `.env`. Enabled by default (`cerebras_enabled: true`).
+3. **Anthropic API** — High quality with prompt caching for reference docs. Costs fractions of a cent per run. Set `ANTHROPIC_API_KEY` in `.env`. Enabled by default.
+4. **Ollama (network)** — Free and private, runs on your own server. Set `ollama_enabled: true` in Settings and `OLLAMA_NETWORK_HOST` in `.env`. If two hosts are configured, the tracker routes to whichever responds faster.
+5. **None** — If all configured backends fail, the run completes without AI analysis. Scoring and email still work.
 
-To force a specific backend for a single run, use the buttons in the Run view or `--backend ollama|cerebras|api` from the CLI.
+To force a specific backend for a single run, use the buttons in the Run view or `--backend nvidia|cerebras|api|ollama` from the CLI.
 
 ### Analysis architecture
 
-1. **Per-make analysis** — One LLM call per distinct make. Each call receives only that make's listings and its own reference doc, preventing brand terminology from bleeding across makes.
+1. **Per-group analysis** — One LLM call per distinct category (e.g. per make in the automotive domain). Each call receives only that group's listings and its own reference doc, keeping context focused and preventing terminology bleed across groups.
 
-2. **Cross-model synthesis** — One final LLM call sees the combined listing table and the per-make summaries. It produces the top 3 picks and a single final recommendation shown in the email body.
+2. **Cross-group synthesis** — One final LLM call sees the combined listing table and the per-group summaries. It produces the top picks and a single final recommendation shown in the email body.
 
-3. **Validation** — Output is checked for brand-bleed errors (e.g. "EyeSight" in a non-Subaru context). A correction pass runs automatically if issues are found. A warning banner is injected into the email if issues remain.
+3. **Validation** — When domain-specific terminology rules are configured (e.g. brand-specific feature names for automotive domains), output is checked for terminology bleed between groups. A correction pass runs automatically if issues are found, and a warning banner is injected into the email if issues remain.
 
 ---
 
 ## Reference docs
 
-Markdown files in `vehicle_reference/` are automatically matched to each make/model by filename — `honda_crv.md` or `crv_reference.md` both match a Honda CR-V search.
+Markdown files in `reference_data/` are injected into the LLM prompt to provide context specific to what you're searching for. A file is matched to a profile by filename — the system looks for a name that contains the domain or search target slug.
 
-Each file can include trim hierarchy, known issues at specific mileage/year ranges, hybrid vs. gas trade-offs, and what a good deal looks like at current market prices.
+Reference docs can contain anything that makes the LLM's analysis more useful: pricing benchmarks, field definitions, evaluation criteria, known issues, what a good deal looks like, or background on the domain. They are not limited to vehicle data — a rental search might include neighbourhood notes, a job board search might include salary benchmarks, and so on.
 
 ### AI generation
 
-Both the desktop **Docs** view and the web portal admin **Docs** tab have a **Generate with AI** button. Fill in make, model, year range, and optional buyer context — Cerebras generates a structured 5-section guide covering:
-
-1. Model overview & reliability
-2. Trim level reference table
-3. Pricing context
-4. Common issues & recalls
-5. Evaluation tips
+Both the desktop **Docs** view and the web portal admin **Docs** tab have a **Generate with AI** button. Describe what you're searching for and any relevant context — Cerebras generates a structured reference guide tailored to your domain that you can review and edit before saving.
 
 The generated content is editable before saving.
 
@@ -528,11 +529,11 @@ The generated content is editable before saving.
 
 ## Output files
 
-All output is written to `carvana_results/` (gitignored):
+All output is written to `search_results/` (gitignored):
 
 | File | Description |
 |---|---|
-| `carvana_YYYYMMDD_HHMMSS_<id>.csv` | Timestamped results per run |
+| `search_YYYYMMDD_HHMMSS_<id>.csv` | Timestamped results per run |
 | `history.db` | SQLite — all runs, listings, and price history |
 | `tracker.log` | Rolling log (5 MB max, 3 backups) |
 
@@ -541,21 +542,21 @@ All output is written to `carvana_results/` (gitignored):
 ## Project structure
 
 ```
-car_search/
+ingenuity_ai/
 ├── main.py                   # CLI entry point, run orchestration, scheduling
 ├── config.py                 # Settings loader (reads dashboard_settings.json + .env)
 ├── profiles.py               # SearchProfile dataclass + profiles.yaml loader
 ├── profiles.yaml             # Your search profiles (gitignored)
 ├── dashboard_settings.json   # User-editable settings (managed via dashboard)
 ├── users.json                # Web portal user accounts (gitignored in .env)
-├── vehicle_reference/        # Per-model markdown files for LLM context
+├── reference_data/           # Per-model markdown files for LLM context
 ├── domains/                  # Domain adapter layer
 │   ├── base.py               # DomainAdapter, DomainConfig, FieldSchema abstractions
 │   ├── registry.py           # load_adapter(domain_id) → DomainAdapter
-│   ├── automotive/           # Carvana adapter
+│   ├── automotive/           # Built-in used-vehicle adapter (Carvana)
 │   │   ├── adapter.py        # CarvanaAdapter(DomainAdapter) + AUTOMOTIVE_CONFIG
-│   │   ├── url_builder.py    # Carvana base64 URL builder (moved from scraper/urls.py)
-│   │   └── normalizer.py     # normalize_vehicle() (moved from scraper/extractor.py)
+│   │   ├── url_builder.py    # base64-encoded search URL builder
+│   │   └── normalizer.py     # Vehicle field normalization
 │   ├── generic/
 │   │   └── adapter.py        # GenericAdapter — fully config-driven, no hardcoded logic
 │   └── saved/                # Saved DomainConfig JSON files (<domain_id>.json)
@@ -607,9 +608,10 @@ car_search/
 ├── analysis/
 │   ├── rules.py              # Rule-based filtering, enrichment, value scoring
 │   ├── llm.py                # LLM orchestrator — NVIDIA → Cerebras → Anthropic → Ollama
-│   ├── validator.py          # Brand-bleed validation + auto-correction
+│   ├── validator.py          # Cross-group terminology bleed detection + auto-correction
 │   ├── anthropic_client.py   # Anthropic API client (with prompt caching)
 │   ├── cerebras_client.py    # Cerebras API client (OpenAI-compatible)
+│   ├── nvidia_client.py      # NVIDIA NIM client (OpenAI-compatible)
 │   └── ollama_client.py      # Network Ollama client
 ├── storage/
 │   ├── csv_writer.py
@@ -646,9 +648,8 @@ python -m pytest tests/ -v
 
 ## Known limitations
 
-- **Bot detection:** Carvana uses PerimeterX. Headless Chromium passes most of the time. If scraping fails consistently, residential proxies are the next step.
-- **Shipping costs:** Often unavailable in search results. Shown as `None` in the CSV when missing.
-- **Synthesis cap:** The cross-model synthesis call is capped at 30 listings. Listings beyond position 30 by score won't be eligible for top-pick selection. Per-make analyses still see all listings.
-- **No official Carvana API:** The scraper can break if Carvana changes their frontend. The three-strategy extractor (Next.js → Apollo → DOM fallback) is designed to be resilient but may need maintenance.
+- **Bot detection:** Many sites use bot mitigation (PerimeterX, Cloudflare, etc.). Headless Chromium passes most of the time. If scraping fails consistently, rotating residential proxies are the next step — configure via `proxy_list` in Settings.
+- **No official APIs:** The scraper works against rendered HTML. If a site significantly changes its frontend structure, discovered field paths may need to be re-validated via the Domain Wizard.
+- **Synthesis cap:** The cross-group synthesis call is capped at 30 listings. Listings beyond position 30 by score won't be eligible for top-pick selection. Per-group analyses still see all listings.
 - **Prices change constantly.** Each CSV row is a snapshot at scrape time.
 - **Python required on host machine.** The Tauri app spawns `py.exe -3.11 -m uvicorn` directly. Python 3.11 and all pip dependencies must be installed on the machine. A fully self-contained bundle (PyInstaller) is a future improvement.

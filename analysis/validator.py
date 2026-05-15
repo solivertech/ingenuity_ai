@@ -6,6 +6,9 @@ Two entry points:
   validate_email_html()  — lightweight regex check on the full email HTML.
 
 Neither function raises; both always return a ValidationResult.
+
+Brand-bleed checking is opt-in via the brand_terms parameter. Pass
+AUTOMOTIVE_BRAND_TERMS (exported below) for automotive domains.
 """
 
 import logging
@@ -14,14 +17,17 @@ from dataclasses import dataclass, field
 
 log = logging.getLogger(__name__)
 
-# Brand-specific terms that must only appear in their make's context.
-# Keys are lowercase make names. Terms are matched case-insensitively.
-_BRAND_TERMS: dict[str, list[str]] = {
+# Automotive brand terms for callers that want brand-bleed validation.
+# Keys are lowercase make names; values are brand-specific feature strings.
+AUTOMOTIVE_BRAND_TERMS: dict[str, list[str]] = {
     "honda":  ["Honda Sensing", "e:HEV", "Honda Navigation"],
     "toyota": ["Toyota Safety Sense", "Toyota Safety Sense 2.0", "Toyota Safety Sense 3.0"],
     "kia":    ["Drive Wise"],
     "subaru": ["EyeSight", "Symmetrical AWD", "StarTex"],
 }
+
+# Kept as alias for any remaining internal callers.
+_BRAND_TERMS = AUTOMOTIVE_BRAND_TERMS
 
 
 @dataclass
@@ -43,16 +49,21 @@ def validate_llm_result(
     analysis_text: str,
     makes_present: list[str],
     anthropic_client=None,
+    brand_terms: dict[str, list[str]] | None = None,
 ) -> ValidationResult:
     """
     Check the LLM analysis for brand-bleed errors (e.g. "Honda Sensing" in a
     RAV4 paragraph). If issues are found, attempt auto-correction via a secondary
     cheap LLM call when an anthropic_client is provided.
+
+    brand_terms: optional mapping of make → list of brand-specific terms.
+    Pass AUTOMOTIVE_BRAND_TERMS for automotive domains. When None (default),
+    brand-bleed checking is skipped and the result always passes.
     """
-    if not analysis_text:
+    if not analysis_text or brand_terms is None:
         return ValidationResult(passed=True)
 
-    issues = _check_brand_bleed(analysis_text, makes_present)
+    issues = _check_brand_bleed(analysis_text, makes_present, brand_terms)
 
     if not issues:
         log.info("LLM validation: PASS")
@@ -63,7 +74,7 @@ def validate_llm_result(
 
     corrected = None
     if anthropic_client is not None:
-        corrected = _attempt_correction(analysis_text, makes_present, issues, anthropic_client)
+        corrected = _attempt_correction(analysis_text, makes_present, issues, anthropic_client, brand_terms)
 
     return ValidationResult(passed=False, issues=issues, corrected_text=corrected)
 
@@ -71,21 +82,24 @@ def validate_llm_result(
 def validate_email_html(
     html: str,
     makes_present: list[str],
+    brand_terms: dict[str, list[str]] | None = None,
 ) -> ValidationResult:
     """
     Validate the full email HTML before sending.
     Strips HTML tags and runs brand-bleed checks on the resulting plain text.
-    This is a belt-and-suspenders check after LLM validation in Phase 5.5;
-    no LLM call is made here.
+
+    brand_terms: optional mapping of make → brand-specific terms.
+    Pass AUTOMOTIVE_BRAND_TERMS for automotive domains. When None (default),
+    brand-bleed checking is skipped and the result always passes.
     """
-    if not html:
+    if not html or brand_terms is None:
         return ValidationResult(passed=True)
 
     # Strip tags and collapse whitespace for text-level checks
     text = re.sub(r"<[^>]+>", " ", html)
     text = re.sub(r"\s+", " ", text).strip()
 
-    issues = _check_brand_bleed(text, makes_present)
+    issues = _check_brand_bleed(text, makes_present, brand_terms)
 
     if not issues:
         log.info("Email HTML validation: PASS")
@@ -117,7 +131,11 @@ def build_warning_banner(issues: list[ValidationIssue]) -> str:
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
-def _check_brand_bleed(text: str, makes_present: list[str]) -> list[ValidationIssue]:
+def _check_brand_bleed(
+    text: str,
+    makes_present: list[str],
+    brand_terms: dict[str, list[str]],
+) -> list[ValidationIssue]:
     """
     Return a list of brand-bleed issues in `text`.
 
@@ -132,7 +150,7 @@ def _check_brand_bleed(text: str, makes_present: list[str]) -> list[ValidationIs
     makes_lower = {m.lower() for m in makes_present}
 
     # Check 1: terms for makes not in this search
-    for brand, terms in _BRAND_TERMS.items():
+    for brand, terms in brand_terms.items():
         if brand not in makes_lower:
             for term in terms:
                 if re.search(re.escape(term), text, re.IGNORECASE):
@@ -155,7 +173,7 @@ def _check_brand_bleed(text: str, makes_present: list[str]) -> list[ValidationIs
                 # Zero or multiple makes mentioned — comparison paragraph, skip
                 continue
             primary = mentioned[0]
-            for brand, terms in _BRAND_TERMS.items():
+            for brand, terms in brand_terms.items():
                 if brand == primary or brand not in makes_lower:
                     continue
                 for term in terms:
@@ -179,6 +197,7 @@ def _attempt_correction(
     makes_present: list[str],
     issues: list[ValidationIssue],
     anthropic_client,
+    brand_terms: dict[str, list[str]] | None = None,
 ) -> str | None:
     """
     Ask the LLM to fix identified brand-bleed issues in the analysis text.
@@ -188,7 +207,7 @@ def _attempt_correction(
     vehicles_text = ", ".join(m.title() for m in makes_present)
 
     brand_guide_lines = []
-    for brand, terms in _BRAND_TERMS.items():
+    for brand, terms in (brand_terms or {}).items():
         if brand.lower() in {m.lower() for m in makes_present}:
             brand_guide_lines.append(
                 f"- {brand.title()}: driver-assist system is called '{terms[0]}'"

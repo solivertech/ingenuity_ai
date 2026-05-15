@@ -1,29 +1,73 @@
 import { useEffect, useState } from 'react'
-import { api } from '../api/client'
-import type { DocFile } from '../api/client'
+import { api, BUILTIN_DOMAINS } from '../api/client'
+import type { DocFile, DomainConfig, BuiltinDomain } from '../api/client'
+
+const _BUILTIN_DOMAIN_TYPES: Record<string, string> = Object.fromEntries(
+  BUILTIN_DOMAINS.map(d => [d.domain_id, d.domain_type])
+)
+
+function toSlug(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+}
 
 function GenerateModal({ onClose, onSaved }: { onClose: () => void; onSaved: (filename: string, content: string) => void }) {
-  const [make, setMake]           = useState('')
-  const [model, setModel]         = useState('')
-  const [yearStart, setYearStart] = useState(2021)
-  const [yearEnd, setYearEnd]     = useState(2025)
-  const [notes, setNotes]         = useState('')
+  const [topic, setTopic]           = useState('')
+  const [description, setDesc]      = useState('')
+  const [domainId, setDomainId]     = useState<string>('')  // '' = none
+  const [make, setMake]             = useState('')
+  const [model, setModel]           = useState('')
+  const [yearStart, setYearStart]   = useState(2021)
+  const [yearEnd, setYearEnd]       = useState(2025)
   const [generating, setGenerating] = useState(false)
-  const [generated, setGenerated] = useState<string | null>(null)
-  const [filename, setFilename]   = useState('')
-  const [saving, setSaving]       = useState(false)
-  const [err, setErr]             = useState<string | null>(null)
+  const [generated, setGenerated]   = useState<string | null>(null)
+  const [filename, setFilename]     = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [err, setErr]               = useState<string | null>(null)
+  const [allDomains, setAllDomains] = useState<BuiltinDomain[]>([...BUILTIN_DOMAINS])
 
   const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500'
 
+  useEffect(() => {
+    api.domains.list().then(res => {
+      const saved = res.domains.map((d: DomainConfig) => ({
+        domain_id: d.domain_id,
+        display_name: d.display_name,
+        domain_type: d.domain_type ?? 'generic',
+      }))
+      setAllDomains([...BUILTIN_DOMAINS, ...saved])
+    }).catch(() => {})
+  }, [])
+
+  const isAutomotive = (_BUILTIN_DOMAIN_TYPES[domainId] ?? allDomains.find(d => d.domain_id === domainId)?.domain_type ?? 'generic') === 'automotive'
+
+  // Auto-fill topic from make+model when automotive fields change
+  const handleMakeModel = (newMake: string, newModel: string) => {
+    if (newMake || newModel) {
+      const composed = [newMake, newModel].filter(Boolean).join(' ')
+      setTopic(composed)
+    }
+  }
+
   const generate = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!topic.trim()) return
     setErr(null); setGenerating(true)
     try {
-      const res = await api.docs.generate(make, model, yearStart, yearEnd, notes)
+      const extra: Record<string, unknown> = {}
+      if (isAutomotive) {
+        if (make)  extra.make       = make
+        if (model) extra.model      = model
+        extra.year_start = yearStart
+        extra.year_end   = yearEnd
+      }
+      const res = await api.docs.generate({
+        topic: topic.trim(),
+        description,
+        domain_id: domainId || undefined,
+        extra: Object.keys(extra).length ? extra : undefined,
+      })
       setGenerated(res.content)
-      const slug = `${make}_${model}`.toLowerCase().replace(/[^a-z0-9]+/g, '_')
-      setFilename(`${slug}.md`)
+      setFilename(`${toSlug(topic) || 'reference'}.md`)
     } catch (e) { setErr(e instanceof Error ? e.message : 'Generation failed') }
     finally { setGenerating(false) }
   }
@@ -42,7 +86,7 @@ function GenerateModal({ onClose, onSaved }: { onClose: () => void; onSaved: (fi
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">Generate Vehicle Reference Doc</h2>
+          <h2 className="text-base font-semibold text-gray-900">Generate Reference Doc</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
         </div>
 
@@ -52,39 +96,96 @@ function GenerateModal({ onClose, onSaved }: { onClose: () => void; onSaved: (fi
           )}
 
           {!generated ? (
-            <form onSubmit={generate} className="space-y-4">
+            <form onSubmit={generate} className="space-y-5">
               <p className="text-sm text-gray-500">
-                Uses AI to generate a comprehensive reference guide for evaluating used listings.
+                AI generates a structured reference guide that helps evaluate and compare listings.
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Make</label>
-                  <input className={inputCls} required placeholder="Honda" value={make} onChange={e => setMake(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                  <input className={inputCls} required placeholder="CR-V" value={model} onChange={e => setModel(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year start</label>
-                  <input type="number" className={inputCls} required value={yearStart} onChange={e => setYearStart(Number(e.target.value))} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year end</label>
-                  <input type="number" className={inputCls} required value={yearEnd} onChange={e => setYearEnd(Number(e.target.value))} />
-                </div>
-              </div>
+
+              {/* Domain (optional) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Buyer context <span className="text-gray-400 font-normal">(optional)</span>
+                  Domain <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <select
+                  className={inputCls}
+                  value={domainId}
+                  onChange={e => { setDomainId(e.target.value); setMake(''); setModel('') }}
+                >
+                  <option value="">None — generic reference doc</option>
+                  {allDomains.map(d => (
+                    <option key={d.domain_id} value={d.domain_id}>{d.display_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Automotive extras */}
+              {isAutomotive && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Automotive details</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Make <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <input
+                        className={inputCls}
+                        placeholder="Honda"
+                        value={make}
+                        onChange={e => { setMake(e.target.value); handleMakeModel(e.target.value, model) }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Model <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <input
+                        className={inputCls}
+                        placeholder="CR-V"
+                        value={model}
+                        onChange={e => { setModel(e.target.value); handleMakeModel(make, e.target.value) }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Year start</label>
+                      <input type="number" className={inputCls} value={yearStart}
+                        onChange={e => setYearStart(Number(e.target.value))} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Year end</label>
+                      <input type="number" className={inputCls} value={yearEnd}
+                        onChange={e => setYearEnd(Number(e.target.value))} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Topic */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject / topic</label>
+                <input
+                  className={inputCls}
+                  required
+                  placeholder="e.g. Honda CR-V, Standing desk, 2BR apartment in Austin"
+                  value={topic}
+                  onChange={e => setTopic(e.target.value)}
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  What I'm looking for <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <textarea
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                  rows={3} placeholder="e.g. Located in Phoenix, AZ. Budget up to $30k. Prefer hybrid trims."
-                  value={notes} onChange={e => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Describe your priorities, budget, location, must-haves, or anything else that should inform the guide…"
+                  value={description}
+                  onChange={e => setDesc(e.target.value)}
                 />
               </div>
-              <button type="submit" disabled={generating}
+
+              <button type="submit" disabled={generating || !topic.trim()}
                 className="w-full bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
                 {generating ? 'Generating…' : 'Generate reference doc'}
               </button>
@@ -211,7 +312,7 @@ export function DocsView() {
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Reference Docs</h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            Name files <code className="bg-gray-100 px-1 rounded">make_model.md</code> for auto-discovery, e.g. <code className="bg-gray-100 px-1 rounded">honda_crv.md</code>
+            AI-generated guides fed to the LLM when evaluating listings.
           </p>
         </div>
         <div className="flex gap-2">
@@ -287,7 +388,7 @@ export function DocsView() {
                 className="flex-1 p-4 font-mono text-sm resize-none focus:outline-none"
                 value={draft}
                 onChange={e => setDraft(e.target.value)}
-                placeholder="# Vehicle reference content…"
+                placeholder="# Reference doc content…"
                 spellCheck={false}
               />
             </>
