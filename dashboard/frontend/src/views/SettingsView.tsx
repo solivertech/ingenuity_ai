@@ -9,14 +9,14 @@ const inputCls = 'block w-full rounded-md border border-gray-300 px-3 py-1.5 tex
 const GROUPS: { title: string; keys: (keyof Settings)[] }[] = [
   {
     title: 'Search behaviour',
-    keys: ['zip_code', 'max_pages_per_search', 'request_delay_seconds', 'page_timeout_seconds', 'headless'],
+    keys: ['zip_code', 'max_pages_per_search', 'request_delay_seconds', 'scraping_delay_ms', 'page_timeout_seconds', 'headless'],
   },
   {
     title: 'Scheduling',
     keys: ['check_interval_hours'],
   },
   {
-    title: 'Payment calculator',
+    title: 'Financing calculator',
     keys: ['down_payment', 'interest_rate', 'loan_term_months'],
   },
   {
@@ -52,7 +52,7 @@ const GROUPS: { title: string; keys: (keyof Settings)[] }[] = [
 const SECRET_KEYS = new Set(['NVIDIA_API_KEY', 'ANTHROPIC_API_KEY', 'CEREBRAS_API_KEY', 'OLLAMA_NETWORK_HOST', 'OLLAMA_NETWORK_HOST_2', 'GMAIL_SENDER', 'GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET'])
 
 const BOOL_KEYS = new Set(['headless', 'send_email', 'nvidia_enabled', 'cerebras_enabled', 'anthropic_enabled', 'ollama_enabled'])
-const NUM_KEYS  = new Set(['max_pages_per_search', 'request_delay_seconds', 'page_timeout_seconds', 'check_interval_hours',
+const NUM_KEYS  = new Set(['max_pages_per_search', 'request_delay_seconds', 'scraping_delay_ms', 'page_timeout_seconds', 'check_interval_hours',
   'down_payment', 'interest_rate', 'loan_term_months',
   'nvidia_max_tokens', 'cerebras_max_tokens', 'anthropic_max_tokens',
   'ollama_timeout', 'ollama_ref_doc_max_chars'])
@@ -62,6 +62,7 @@ const LABELS: Partial<Record<keyof Settings, string>> = {
   zip_code:                'Zip code',
   max_pages_per_search:    'Max pages per search',
   request_delay_seconds:   'Request delay (seconds)',
+  scraping_delay_ms:       'Scraping delay (ms)',
   page_timeout_seconds:    'Page timeout (seconds)',
   headless:                'Headless browser',
   check_interval_hours:    'Check interval (hours)',
@@ -84,7 +85,7 @@ const LABELS: Partial<Record<keyof Settings, string>> = {
   ollama_ref_doc_max_chars:'Ref doc max chars',
   ollama_preferred_models: 'Preferred models (comma-separated)',
   output_dir:              'Output directory',
-  vehicle_reference_dir:   'Vehicle reference directory',
+  vehicle_reference_dir:   'Reference data directory',
   db_path:                 'Database path',
   log_file:                'Log file path',
 }

@@ -143,10 +143,10 @@ export const api = {
       }),
     delete: (filename: string) =>
       request<void>(`/portal/docs/${filename}`, { method: 'DELETE' }),
-    generate: (make: string, model: string, yearStart: number, yearEnd: number, notes: string) =>
+    generate: (req: { topic: string; description?: string; domain_id?: string; extra?: Record<string, unknown> }) =>
       request<{ content: string }>('/portal/docs/generate', {
         method: 'POST',
-        body: JSON.stringify({ make, model, year_start: yearStart, year_end: yearEnd, notes }),
+        body: JSON.stringify(req),
       }, 120_000),
   },
 

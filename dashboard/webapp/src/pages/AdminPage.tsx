@@ -223,25 +223,24 @@ function DocsTab() {
 }
 
 function GeneratorModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [make, setMake] = useState('')
-  const [model, setModel] = useState('')
-  const [yearStart, setYearStart] = useState(2021)
-  const [yearEnd, setYearEnd] = useState(2025)
-  const [notes, setNotes] = useState('')
+  const [topic, setTopic]           = useState('')
+  const [description, setDesc]      = useState('')
   const [generating, setGenerating] = useState(false)
-  const [generated, setGenerated] = useState<string | null>(null)
-  const [filename, setFilename] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
+  const [generated, setGenerated]   = useState<string | null>(null)
+  const [filename, setFilename]     = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [err, setErr]               = useState<string | null>(null)
+
+  const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
 
   const generate = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!topic.trim()) return
     setErr(null); setGenerating(true)
     try {
-      const res = await api.docs.generate(make, model, yearStart, yearEnd, notes)
+      const res = await api.docs.generate({ topic: topic.trim(), description })
       setGenerated(res.content)
-      const slug = `${make}_${model}`.toLowerCase().replace(/[^a-z0-9]+/g, '_')
-      setFilename(`${slug}.md`)
+      setFilename(`${toSlug(topic) || 'reference'}.md`)
     } catch (e) { setErr(e instanceof Error ? e.message : 'Generation failed') }
     finally { setGenerating(false) }
   }
@@ -261,8 +260,8 @@ function GeneratorModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-2xl bg-white h-full overflow-y-auto shadow-xl z-50 flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">Generate Vehicle Reference Doc</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">Ã—</button>
+          <h2 className="text-base font-semibold text-gray-900">Generate Reference Doc</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
         </div>
 
         <div className="flex-1 p-6 space-y-4">
@@ -271,37 +270,33 @@ function GeneratorModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           {!generated ? (
             <form onSubmit={generate} className="space-y-4">
               <p className="text-sm text-gray-500">
-                Uses AI to generate a comprehensive reference guide for evaluating used listings.
+                AI generates a structured reference guide that helps evaluate and compare listings.
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Make</label>
-                  <input className={inputCls} required placeholder="Honda" value={make} onChange={e => setMake(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                  <input className={inputCls} required placeholder="CR-V" value={model} onChange={e => setModel(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year start</label>
-                  <input type="number" className={inputCls} required value={yearStart} onChange={e => setYearStart(Number(e.target.value))} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year end</label>
-                  <input type="number" className={inputCls} required value={yearEnd} onChange={e => setYearEnd(Number(e.target.value))} />
-                </div>
-              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Buyer context <span className="text-gray-400 font-normal">(optional)</span></label>
-                <textarea
-                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                  rows={3} placeholder="e.g. Located in Phoenix, AZ. Budget up to $30k. Prefer hybrid trims."
-                  value={notes} onChange={e => setNotes(e.target.value)}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject / topic</label>
+                <input
+                  className={inputCls}
+                  required
+                  placeholder="e.g. Honda CR-V, Standing desk, 2BR apartment in Austin"
+                  value={topic}
+                  onChange={e => setTopic(e.target.value)}
                 />
               </div>
-              <button type="submit" disabled={generating}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  What I'm looking for <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                  rows={4}
+                  placeholder="Describe your priorities, budget, location, must-haves, or anything else that should inform the guide…"
+                  value={description}
+                  onChange={e => setDesc(e.target.value)}
+                />
+              </div>
+              <button type="submit" disabled={generating || !topic.trim()}
                 className="w-full bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
-                {generating ? 'Generatingâ€¦' : 'Generate reference doc'}
+                {generating ? 'Generating…' : 'Generate reference doc'}
               </button>
             </form>
           ) : (
@@ -328,7 +323,7 @@ function GeneratorModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
               <div className="flex gap-3">
                 <button onClick={save} disabled={saving}
                   className="flex-1 bg-brand-600 text-white rounded-md py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50">
-                  {saving ? 'Savingâ€¦' : 'Save doc'}
+                  {saving ? 'Saving…' : 'Save doc'}
                 </button>
                 <button onClick={onClose}
                   className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">

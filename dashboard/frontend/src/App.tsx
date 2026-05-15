@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { api } from './api/client'
-import type { SetupStatus, ScheduleStatus } from './api/client'
+import type { SetupStatus, ScheduleEntryStatus } from './api/client'
 import { useTheme } from './hooks/useTheme'
 import { StatusDot } from './components/StatusDot'
 import { RunView }      from './views/RunView'
@@ -28,7 +28,7 @@ export default function App() {
   useTheme() // initialises theme class on <html> and reacts to OS changes
   const navigate                            = useNavigate()
   const [setupStatus, setSetupStatus]       = useState<SetupStatus | null>(null)
-  const [scheduleStatus, setScheduleStatus] = useState<ScheduleStatus | null>(null)
+  const [scheduleStatus, setScheduleStatus] = useState<ScheduleEntryStatus | null>(null)
   const [lastRun, setLastRun]               = useState<string | null>(null)
   const [activeJob, setActiveJob]           = useState(false)
   const [activeJobId, setActiveJobId]       = useState<string | null>(null)
@@ -46,9 +46,9 @@ export default function App() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const [s, sched] = await Promise.all([api.setup.status(), api.schedule.get()])
+        const [s, { schedules }] = await Promise.all([api.setup.status(), api.schedules.list()])
         setSetupStatus(s)
-        setScheduleStatus(sched)
+        setScheduleStatus(schedules.find(e => e.running_job) ?? schedules.find(e => e.enabled) ?? schedules[0] ?? null)
         if (!backendReadyRef.current) {
           backendReadyRef.current = true
           setRoutesKey(1) // remount all views so they re-fetch their data
@@ -67,7 +67,7 @@ export default function App() {
   useEffect(() => {
     if (!scheduleStatus?.running_job) return
     const id = setInterval(async () => {
-      try { setScheduleStatus(await api.schedule.get()) } catch { /* ignore */ }
+      try { const { schedules } = await api.schedules.list(); setScheduleStatus(schedules.find(e => e.running_job) ?? schedules.find(e => e.enabled) ?? schedules[0] ?? null) } catch { /* ignore */ }
     }, 5_000)
     return () => clearInterval(id)
   }, [!!scheduleStatus?.running_job])
